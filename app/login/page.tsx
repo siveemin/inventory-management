@@ -13,14 +13,17 @@ const demos = [
   ["Staff", "staff@sovann.kh", "staff123"],
 ];
 
+// Demo shortcuts only appear in local development, never on the deployed site.
+const showDemos = process.env.NODE_ENV !== "production";
+
 export default function LoginPage() {
   const { login, user, loading } = useAuth();
   const { system } = useSettings();
   const { t } = useI18n();
   const toast = useToast();
   const router = useRouter();
-  const [email, setEmail] = useState("admin@sovann.kh");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState(showDemos ? "admin@sovann.kh" : "");
+  const [password, setPassword] = useState(showDemos ? "admin123" : "");
   const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
 
@@ -72,6 +75,7 @@ export default function LoginPage() {
             </label>
             <Button type="submit" disabled={busy}>{busy ? "…" : t("login.submit")}</Button>
           </div>
+          {showDemos ? (
           <div className="mt-8">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-soft">{t("login.demo")}</p>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -87,6 +91,7 @@ export default function LoginPage() {
               ))}
             </div>
           </div>
+          ) : null}
         </form>
       </section>
     </div>
