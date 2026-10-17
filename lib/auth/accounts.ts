@@ -1,5 +1,11 @@
 import { HttpError } from "@/lib/http";
 
+function appOrigin() {
+  if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, "");
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  return "http://localhost:3000";
+}
+
 export async function registerNeonAccount(input: { name: string; email: string; password: string }) {
   const base = process.env.NEON_AUTH_BASE_URL;
   if (!base) throw new HttpError(500, "Neon Auth is not configured.");
@@ -7,7 +13,7 @@ export async function registerNeonAccount(input: { name: string; email: string; 
     method: "POST",
     headers: {
       "content-type": "application/json",
-      origin: "http://localhost:3000",
+      origin: appOrigin(),
     },
     body: JSON.stringify({
       name: input.name,

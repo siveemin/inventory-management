@@ -8,7 +8,7 @@ const features = [
   {
     id: "floor",
     kicker: "Warehouses",
-    title: "Every room has its own count",
+    title: "Every warehouse has its own count",
     body: "Phnom Penh, Siem Reap, and the port keep separate bins. Transfers move stock only when the other side receives it.",
   },
   {
@@ -109,7 +109,7 @@ export default function LandingPage() {
           <div className="overflow-hidden rounded-[28px] bg-sidebar px-6 py-10 text-[#f6f1e8] sm:px-10 sm:py-14">
             <div className="grid items-end gap-8 lg:grid-cols-[1.2fr_0.8fr]">
               <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-white/50">For the counter and the back room</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-white/50">For the counter and the warehouse</p>
                 <h2 className="mt-3 max-w-lg font-serif text-4xl leading-tight sm:text-5xl">Open the book. The shelf is already counted.</h2>
               </div>
               <div className="flex flex-wrap gap-3 lg:justify-end">

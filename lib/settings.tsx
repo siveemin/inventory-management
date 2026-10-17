@@ -7,7 +7,7 @@ import { translate, type Lang } from "./i18n";
 export type SystemSettings = { name: string; subtitle: string };
 export type Preferences = { language: Lang; dateFormat: DateFormat; timezone: string };
 
-const defaultSystem: SystemSettings = { name: "Sovann", subtitle: "Warehouse & trade" };
+const defaultSystem: SystemSettings = { name: "IMS", subtitle: "Inventory Management System" };
 const defaultPrefs: Preferences = {
   language: "en",
   dateFormat: "DD/MM/YYYY",
@@ -50,7 +50,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     if (!ready) return;
     document.documentElement.lang = prefs.language === "km" ? "km" : "en";
     document.documentElement.dataset.lang = prefs.language;
-    document.title = system.name || "Sovann";
+    document.title = system.name || "IMS";
   }, [prefs.language, ready, system.name]);
 
   const value = useMemo<SettingsValue>(

@@ -12,7 +12,7 @@ const khmer = Noto_Sans_Khmer({
 });
 
 export const metadata: Metadata = {
-  title: "Sovann",
+  title: "IMS – Inventory Management System",
   description: "Inventory and warehouse management for Cambodian trade.",
 };
 

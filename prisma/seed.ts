@@ -119,7 +119,7 @@ async function main() {
   const catBySlug = new Map(cats.map((row) => [row.slug, row.id]));
 
   const users = [
-    { name: "Sovann Admin", email: "admin@sovann.kh", password: "admin123", role: "ADMIN", phone: "+855 12 000 001", warehouseId: wh[0].id },
+    { name: "Admin", email: "admin@sovann.kh", password: "admin123", role: "ADMIN", phone: "+855 12 000 001", warehouseId: wh[0].id },
     { name: "Dara Keo", email: "warehouse@sovann.kh", password: "warehouse123", role: "WAREHOUSE_MANAGER", phone: "+855 12 000 002", warehouseId: wh[0].id },
     { name: "Sreymom Chan", email: "sales@sovann.kh", password: "sales123", role: "SALES_MANAGER", phone: "+855 12 000 003", warehouseId: wh[0].id },
     { name: "Pisey Noun", email: "staff@sovann.kh", password: "staff123", role: "STAFF", phone: "+855 12 000 004", warehouseId: wh[1].id },
