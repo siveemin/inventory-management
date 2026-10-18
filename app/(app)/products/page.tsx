@@ -6,6 +6,7 @@ import { useFormat, useI18n } from "@/lib/settings";
 import { fileToDataUrl, readProductImage, saveProductImage } from "@/lib/storage";
 import type { Meta, PageResult, Product } from "@/lib/types";
 import { useToast } from "@/components/providers";
+import { PRODUCT_SEARCH_EVENT } from "@/components/shell";
 import { Button, Card, ConfirmDialog, EmptyState, ErrorNote, Field, LoadingBlock, Modal, PageHeader, Pagination, SearchBar, Select, StatusBadge, Switch, Table, Td, TextArea, TextInput, Th } from "@/components/ui";
 
 type Form = {
@@ -22,7 +23,15 @@ export default function ProductsPage() {
   const { t } = useI18n();
   const money = useFormat();
   const toast = useToast();
-  const [search, setSearch] = useState("");
+  // A search typed in the top bar arrives as ?search=…
+  const [search, setSearch] = useState(() => {
+    if (typeof window === "undefined") return "";
+    let pending: string | null = null;
+    try {
+      pending = sessionStorage.getItem(PRODUCT_SEARCH_EVENT);
+    } catch {}
+    return pending ?? new URLSearchParams(window.location.search).get("search") ?? "";
+  });
   const [categoryId, setCategoryId] = useState("");
   const [supplierId, setSupplierId] = useState("");
   const [status, setStatus] = useState("");
@@ -34,6 +43,18 @@ export default function ProductsPage() {
   const [remove, setRemove] = useState<Product | null>(null);
   const meta = useApi<Meta>("/api/meta");
   const list = useApi<PageResult<Product>>(qs("/api/products", { search, categoryId, supplierId, status, page }));
+
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem(PRODUCT_SEARCH_EVENT);
+    } catch {}
+    const onSearch = (event: Event) => {
+      setSearch((event as CustomEvent<string>).detail || "");
+      setPage(1);
+    };
+    window.addEventListener(PRODUCT_SEARCH_EVENT, onSearch);
+    return () => window.removeEventListener(PRODUCT_SEARCH_EVENT, onSearch);
+  }, []);
 
   useEffect(() => {
     const barcode = new URLSearchParams(window.location.search).get("barcode");

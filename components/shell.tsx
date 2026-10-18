@@ -15,6 +15,7 @@ import {
   PieChart,
   ScanBarcode,
   ScrollText,
+  Search,
   Settings,
   Tags,
   TrendingUp,
@@ -168,6 +169,91 @@ function BellButton() {
   );
 }
 
+// The products page listens for this event so a header search works even
+// when the user is already on /products.
+export const PRODUCT_SEARCH_EVENT = "ims:product-search";
+
+function TopSearch() {
+  const { t } = useI18n();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [query, setQuery] = useState("");
+
+  function onSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    const q = query.trim();
+    if (active(pathname, "/products")) {
+      window.dispatchEvent(new CustomEvent(PRODUCT_SEARCH_EVENT, { detail: q }));
+    } else {
+      // The products page can mount before the URL updates, so hand the
+      // query over through session storage as well.
+      try {
+        sessionStorage.setItem(PRODUCT_SEARCH_EVENT, q);
+      } catch {}
+      router.push(q ? `/products?search=${encodeURIComponent(q)}` : "/products");
+    }
+  }
+
+  return (
+    <form onSubmit={onSubmit} role="search" className="relative w-full max-w-xl">
+      <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft" />
+      <input
+        type="search"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        placeholder={t("top.search")}
+        aria-label={t("top.search")}
+        className="h-11 w-full rounded-full border border-line bg-white pl-11 pr-4 text-sm outline-none placeholder:text-ink-soft/80 focus:border-forest"
+      />
+    </form>
+  );
+}
+
+function LanguageSwitch() {
+  const { prefs, updatePrefs } = useSettings();
+  const options = [
+    { value: "en", label: "EN" },
+    { value: "km", label: "ខ្មែរ" },
+  ] as const;
+  return (
+    <div className="flex rounded-full border border-line bg-white p-1" role="group" aria-label="Language">
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => updatePrefs({ ...prefs, language: option.value })}
+          aria-pressed={prefs.language === option.value}
+          className={cx(
+            "rounded-full px-3 py-1 text-xs font-semibold",
+            prefs.language === option.value ? "bg-forest text-white" : "text-ink-soft hover:text-ink",
+          )}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function UserBadge() {
+  const { user } = useAuth();
+  const { t } = useI18n();
+  if (!user) return null;
+  return (
+    <div className="flex items-center gap-3">
+      {user.avatarUrl ? (
+        <img src={user.avatarUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
+      ) : (
+        <span className="grid h-10 w-10 place-items-center rounded-full bg-forest font-serif text-lg text-white">{user.name.slice(0, 1)}</span>
+      )}
+      <div className="min-w-0 leading-tight">
+        <p className="truncate text-sm font-semibold text-ink">{user.name}</p>
+        <p className="truncate text-xs text-ink-soft">{t(`role.${user.role}`)}</p>
+      </div>
+    </div>
+  );
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
   const { system } = useSettings();
@@ -228,9 +314,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <BellButton />
         </header>
 
-        <div className="sticky top-0 z-20 hidden items-center justify-between border-b border-line/80 bg-paper/85 px-6 py-3 backdrop-blur lg:flex xl:px-10">
-          <p className="truncate text-sm text-ink-soft">{user.name} · {t(`role.${user.role}`)}</p>
-          <BellButton />
+        <div className="sticky top-0 z-20 hidden items-center gap-6 border-b border-line/80 bg-paper/85 px-6 py-3 backdrop-blur lg:flex xl:px-10">
+          <TopSearch />
+          <div className="ml-auto flex items-center gap-4">
+            <BellButton />
+            <UserBadge />
+            <LanguageSwitch />
+          </div>
         </div>
 
         <main className="mx-auto w-full min-w-0 max-w-[1180px] px-4 py-5 pb-[calc(6.25rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:py-8 lg:pb-10">

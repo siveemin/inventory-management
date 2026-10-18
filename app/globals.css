@@ -51,6 +51,11 @@ html[data-lang="km"] .font-serif {
   font-family: var(--font-khmer), var(--font-outfit), sans-serif;
 }
 
+/* Letter spacing pulls Khmer vowels and subscripts apart. */
+html[data-lang="km"] [class*="tracking-"] {
+  letter-spacing: normal;
+}
+
 ::selection { background: #d7eadc; }
 
 button, input, select, textarea { font: inherit; }
