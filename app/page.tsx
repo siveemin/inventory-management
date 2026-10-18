@@ -63,7 +63,6 @@ export default function LandingPage() {
       <main id="top">
         <section className="mx-auto grid max-w-6xl items-center gap-12 px-5 py-14 sm:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
           <div>
-            <p className="text-sm font-semibold leading-relaxed text-forest" style={{ fontFamily: "var(--font-khmer), sans-serif" }}>ភ្នំពេញ · សៀមរាប · ព្រះសីហនុ</p>
             <h1 className="mt-4 max-w-xl font-serif text-[2.6rem] leading-[1.02] tracking-tight sm:text-6xl lg:text-[4.4rem]">
               Every warehouse, always up to date.
             </h1>
