@@ -36,7 +36,7 @@ export default function LandingPage() {
   const { system } = useSettings();
   const { user } = useAuth();
   const enter = user ? "/dashboard" : "/login";
-  const enterLabel = user ? "Open the books" : "Sign in";
+  const enterLabel = user ? "Open dashboard" : "Sign in";
 
   return (
     <div className="min-h-screen bg-paper text-ink">
@@ -63,9 +63,9 @@ export default function LandingPage() {
       <main id="top">
         <section className="mx-auto grid max-w-6xl items-center gap-12 px-5 py-14 sm:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest">ភ្នំពេញ · សៀមរាប · ព្រះសីហនុ</p>
+            <p className="text-sm font-semibold leading-relaxed text-forest" style={{ fontFamily: "var(--font-khmer), sans-serif" }}>ភ្នំពេញ · សៀមរាប · ព្រះសីហនុ</p>
             <h1 className="mt-4 max-w-xl font-serif text-[2.6rem] leading-[1.02] tracking-tight sm:text-6xl lg:text-[4.4rem]">
-              The warehouse, kept in a quiet book.
+              Every warehouse, always up to date.
             </h1>
             <p className="mt-5 max-w-md text-base leading-relaxed text-ink-soft sm:text-lg">
               {system.name} is the inventory desk for a Cambodian trading shop: stock across warehouses, sales in USD and KHR, and a Khmer invoice when the customer is waiting.
@@ -110,7 +110,7 @@ export default function LandingPage() {
             <div className="grid items-end gap-8 lg:grid-cols-[1.2fr_0.8fr]">
               <div>
                 <p className="text-xs uppercase tracking-[0.18em] text-white/50">For the counter and the warehouse</p>
-                <h2 className="mt-3 max-w-lg font-serif text-4xl leading-tight sm:text-5xl">Open the book. The shelf is already counted.</h2>
+                <h2 className="mt-3 max-w-lg font-serif text-4xl leading-tight sm:text-5xl">Your stock is already counted, every day.</h2>
               </div>
               <div className="flex flex-wrap gap-3 lg:justify-end">
                 <Link href={enter} className="rounded-full bg-forest px-5 py-3 text-sm font-medium text-white hover:bg-forest-deep">
@@ -150,7 +150,7 @@ function Ledger({ name, subtitle }: { name: string; subtitle: string }) {
             <p className="text-xs text-ink-soft">{subtitle}</p>
           </div>
           <div className="text-right">
-            <p className="text-xs tracking-[0.16em] text-forest">វិក្កយបត្រ</p>
+            <p className="text-sm text-forest" style={{ fontFamily: "var(--font-khmer), sans-serif" }}>វិក្កយបត្រ</p>
             <p className="font-serif text-lg">INVOICE</p>
           </div>
         </div>

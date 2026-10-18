@@ -53,7 +53,7 @@ export default function LoginPage() {
         </div>
         <div>
           <p className="font-serif text-6xl leading-[0.95]">{system.name}</p>
-          <p className="mt-4 max-w-md text-lg text-white/70">{system.subtitle}. Quiet books for warehouses that trade in dollars and riel.</p>
+          <p className="mt-4 max-w-md text-lg text-white/70">{system.subtitle}. Stock and sales for warehouses that trade in dollars and riel.</p>
         </div>
         <p className="text-sm text-white/50">USD · KHR · Khmer invoices · three warehouses</p>
       </section>

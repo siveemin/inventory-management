@@ -60,7 +60,7 @@ export function KhmerInvoice({ order }: { order: InvoiceData }) {
             <p className="text-xs text-[#6f675e]">{system.subtitle}</p>
           </div>
           <div className="text-right">
-            <p className="text-xs tracking-[0.16em] text-[#1F7A4D]">វិក្កយបត្រ</p>
+            <p className="text-sm text-[#1F7A4D]" style={{ fontFamily: "var(--font-khmer), sans-serif" }}>វិក្កយបត្រ</p>
             <p className="font-serif text-xl">INVOICE</p>
           </div>
         </div>
