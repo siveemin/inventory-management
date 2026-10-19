@@ -16,8 +16,8 @@ const demos = [
   ["Staff", "staff@sovann.kh", "staff123"],
 ];
 
-// Demo shortcuts only appear in local development, never on the deployed site.
-const showDemos = process.env.NODE_ENV !== "production";
+// Demo shortcuts appear on every environment, including the deployed site.
+const showDemos = true;
 
 export default function LoginPage() {
   const { login, user, loading } = useAuth();
