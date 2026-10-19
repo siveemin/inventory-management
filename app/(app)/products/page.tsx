@@ -216,9 +216,15 @@ export default function ProductsPage() {
           <div className="md:col-span-2">
             <Field label={t("label.image")}>
               <input type="file" accept="image/*" onChange={async (event) => {
-                const file = event.target.files?.[0];
+                const input = event.currentTarget;
+                const file = input.files?.[0];
                 if (!file) return;
-                set("imageUrl", await fileToDataUrl(file));
+                try {
+                  set("imageUrl", await fileToDataUrl(file));
+                } catch (error) {
+                  input.value = "";
+                  toast(error instanceof Error ? error.message : "Could not read that image.", "bad");
+                }
               }} />
             </Field>
             {form.imageUrl ? <img src={form.imageUrl} alt="" className="mt-3 h-20 w-20 rounded-2xl object-cover" /> : null}

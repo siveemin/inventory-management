@@ -1,10 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useAuth, useToast } from "@/components/providers";
 import { Button, Field, TextInput } from "@/components/ui";
 import { useI18n, useSettings } from "@/lib/settings";
+import { readSavedEmail, saveEmail } from "@/lib/storage";
+
+const noSubscribe = () => () => {};
 
 const demos = [
   ["Admin", "admin@sovann.kh", "admin123"],
@@ -22,7 +25,10 @@ export default function LoginPage() {
   const { t } = useI18n();
   const toast = useToast();
   const router = useRouter();
-  const [email, setEmail] = useState(showDemos ? "admin@sovann.kh" : "");
+  // The last email signed in with "Remember me" is filled in for next time.
+  const savedEmail = useSyncExternalStore(noSubscribe, readSavedEmail, () => "");
+  const [typedEmail, setEmail] = useState<string | null>(null);
+  const email = typedEmail ?? (savedEmail || (showDemos ? "admin@sovann.kh" : ""));
   const [password, setPassword] = useState(showDemos ? "admin123" : "");
   const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -36,6 +42,7 @@ export default function LoginPage() {
     setBusy(true);
     try {
       await login(email, password, remember);
+      saveEmail(email, remember);
       router.replace("/dashboard");
     } catch (error) {
       toast(error instanceof Error ? error.message : "Could not sign in", "bad");

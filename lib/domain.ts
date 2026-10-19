@@ -48,6 +48,9 @@ async function uniqueSlug(base: string, ignoreId?: string) {
   return slug;
 }
 
+// Resized images from the browser are ~50 KB; this leaves room while staying well under Vercel's 4.5 MB body limit.
+const MAX_IMAGE_URL_LENGTH = 1_000_000;
+
 function productData(input: Record<string, unknown>, partial = false) {
   const name = asString(input.name);
   const sku = asString(input.sku);
@@ -65,6 +68,8 @@ function productData(input: Record<string, unknown>, partial = false) {
   if (maxStock > 0 && maxStock < minStock) throw new HttpError(400, "Maximum stock must be above the minimum.");
   const status = asString(input.status) || "ACTIVE";
   if (!["ACTIVE", "INACTIVE"].includes(status)) throw new HttpError(400, "Invalid status.");
+  const imageUrl = asString(input.imageUrl);
+  if (imageUrl.length > MAX_IMAGE_URL_LENGTH) throw new HttpError(400, "That image is too large. Use a smaller JPG or PNG.");
   return {
     name,
     sku,
@@ -78,7 +83,7 @@ function productData(input: Record<string, unknown>, partial = false) {
     discountPct,
     minStock,
     maxStock,
-    imageUrl: asString(input.imageUrl) || null,
+    imageUrl: imageUrl || null,
     status,
   };
 }

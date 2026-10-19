@@ -26,6 +26,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
     }
     throw new Error(data.error || "Unauthorized");
   }
+  if (response.status === 413) throw new Error(data.error || "That upload is too large.");
   if (!response.ok) throw new Error(data.error || "Request failed");
   return data as T;
 }
