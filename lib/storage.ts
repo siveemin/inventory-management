@@ -1,21 +1,3 @@
-const TOKEN_KEY = "sovann.token";
-
-export function getToken() {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
-}
-
-export function setToken(token: string, remember: boolean) {
-  localStorage.removeItem(TOKEN_KEY);
-  sessionStorage.removeItem(TOKEN_KEY);
-  (remember ? localStorage : sessionStorage).setItem(TOKEN_KEY, token);
-}
-
-export function clearToken() {
-  localStorage.removeItem(TOKEN_KEY);
-  sessionStorage.removeItem(TOKEN_KEY);
-}
-
 const EMAIL_KEY = "sovann.email";
 
 export function readSavedEmail() {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { blankLine, LineEditor, type DraftLine } from "@/components/lines";
 import { useAuth, useToast } from "@/components/providers";
 import { Button, Card, Field, PageHeader, Select, TextArea, TextInput } from "@/components/ui";
@@ -18,7 +18,7 @@ export default function NewSalesOrderPage() {
   const { user } = useAuth();
   const meta = useApi<Meta>("/api/meta");
   const [customerId, setCustomerId] = useState("");
-  const [warehouseId, setWarehouseId] = useState("");
+  const [pickedWarehouseId, setWarehouseId] = useState("");
   const [delivery, setDelivery] = useState(toDateInput());
   const [discount, setDiscount] = useState("0");
   const [taxPct, setTaxPct] = useState("0");
@@ -26,10 +26,8 @@ export default function NewSalesOrderPage() {
   const [lines, setLines] = useState<DraftLine[]>([blankLine()]);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    if (!meta.data || warehouseId) return;
-    setWarehouseId(user?.warehouseId || meta.data.warehouses[0]?.id || "");
-  }, [meta.data, user, warehouseId]);
+  // Until the user picks one, sell from their own warehouse (or the first one).
+  const warehouseId = pickedWarehouseId || user?.warehouseId || meta.data?.warehouses[0]?.id || "";
 
   const totals = salesTotals(
     lines.filter((line) => line.productId).map((line) => ({ quantity: Number(line.quantity) || 0, unitPrice: Number(line.price) || 0 })),

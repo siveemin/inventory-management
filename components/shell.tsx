@@ -260,14 +260,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
   const pathname = usePathname();
   const router = useRouter();
-  const [drawer, setDrawer] = useState(false);
+  // The drawer remembers the page it was opened on, so it closes by itself after navigating.
+  const [drawerPath, setDrawerPath] = useState<string | null>(null);
+  const drawer = drawerPath === pathname;
+  const setDrawer = (open: boolean) => setDrawerPath(open ? pathname : null);
   const title = [...groups.flatMap((group) => group.items), { href: "/settings", label: "nav.settings" }, { href: "/orders", label: "nav.orders" }]
     .find((item) => active(pathname, item.href));
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
   }, [loading, router, user]);
-  useEffect(() => setDrawer(false), [pathname]);
 
   if (loading || !user) {
     return (

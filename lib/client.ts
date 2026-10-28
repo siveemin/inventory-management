@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { clearToken, getToken } from "./storage";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+
+// Fired when the session has expired; the auth provider signs the user out and the shell sends them to /login.
+export const UNAUTHORIZED_EVENT = "ims:unauthorized";
 
 export function qs(path: string, params: Record<string, string | number | undefined | null>) {
   const query = new URLSearchParams();
@@ -15,15 +17,10 @@ export function qs(path: string, params: Record<string, string | number | undefi
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);
   if (!headers.has("Content-Type") && options.body) headers.set("Content-Type", "application/json");
-  const token = getToken();
-  if (token) headers.set("Authorization", `Bearer ${token}`);
   const response = await fetch(path, { ...options, headers, credentials: "include" });
   const data = (await response.json().catch(() => ({}))) as { error?: string };
   if (response.status === 401 && path !== "/api/auth/me" && !path.startsWith("/api/auth/sign-")) {
-    clearToken();
-    if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
-      window.location.href = "/login";
-    }
+    if (typeof window !== "undefined") window.dispatchEvent(new Event(UNAUTHORIZED_EVENT));
     throw new Error(data.error || "Unauthorized");
   }
   if (response.status === 413) throw new Error(data.error || "That upload is too large.");
@@ -31,17 +28,24 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   return data as T;
 }
 
+const noSubscribe = () => () => {};
+
+// False during the server render and hydration, true once running in the browser.
+export function useHydrated() {
+  return useSyncExternalStore(noSubscribe, () => true, () => false);
+}
+
 export function useApi<T>(path: string | null) {
   const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(Boolean(path));
   const [error, setError] = useState<string | null>(null);
+  const [settled, setSettled] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const reload = useCallback(() => setTick((n) => n + 1), []);
+  const request = path ? `${path}#${tick}` : null;
 
   useEffect(() => {
-    if (!path) return;
+    if (!path || !request) return;
     let cancel = false;
-    setLoading(true);
     api<T>(path)
       .then((next) => {
         if (!cancel) {
@@ -53,12 +57,13 @@ export function useApi<T>(path: string | null) {
         if (!cancel) setError(reason instanceof Error ? reason.message : "Request failed");
       })
       .finally(() => {
-        if (!cancel) setLoading(false);
+        if (!cancel) setSettled(request);
       });
     return () => {
       cancel = true;
     };
-  }, [path, tick]);
+  }, [path, request]);
 
+  const loading = request !== null && settled !== request;
   return { data, loading, error, reload, setData };
 }

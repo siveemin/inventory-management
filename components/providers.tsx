@@ -2,9 +2,8 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { authClient } from "@/lib/auth/client";
-import { api } from "@/lib/client";
+import { api, UNAUTHORIZED_EVENT } from "@/lib/client";
 import { SettingsProvider } from "@/lib/settings";
-import { clearToken } from "@/lib/storage";
 import type { AuthUser } from "@/lib/types";
 
 type AuthValue = {
@@ -48,6 +47,12 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    const onUnauthorized = () => setUser(null);
+    window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+    return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+  }, []);
+
   const login = useCallback(async (email: string, password: string, remember: boolean) => {
     const { error } = await authClient.signIn.email({
       email,
@@ -58,12 +63,9 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(await api<AuthUser>("/api/auth/me"));
   }, []);
 
+  // The app shell sends a signed-out user to /login.
   const logout = useCallback(() => {
-    void authClient.signOut().finally(() => {
-      clearToken();
-      setUser(null);
-      window.location.href = "/login";
-    });
+    void authClient.signOut().finally(() => setUser(null));
   }, []);
 
   return <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>;

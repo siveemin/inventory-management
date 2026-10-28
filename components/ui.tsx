@@ -191,7 +191,11 @@ export function Pagination({ page, pageSize, total, onPage }: { page: number; pa
 
 export function SearchBar({ value, onChange, placeholder }: { value: string; onChange: (value: string) => void; placeholder?: string }) {
   const [inner, setInner] = useState(value);
-  useEffect(() => setInner(value), [value]);
+  const [outer, setOuter] = useState(value);
+  if (value !== outer) {
+    setOuter(value);
+    setInner(value);
+  }
   useEffect(() => {
     const timer = setTimeout(() => {
       if (inner !== value) onChange(inner);

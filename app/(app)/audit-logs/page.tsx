@@ -16,8 +16,8 @@ export default function AuditPage() {
   const [userId, setUserId] = useState("");
   const [action, setAction] = useState("");
   const [resourceType, setResourceType] = useState("");
-  const [from, setFrom] = useState(toDateInput(new Date(Date.now() - 90 * 86400000)));
-  const [to, setTo] = useState(toDateInput());
+  const [from, setFrom] = useState(() => toDateInput(new Date(Date.now() - 90 * 86400000)));
+  const [to, setTo] = useState(() => toDateInput());
   const [page, setPage] = useState(1);
   const users = useApi<PageResult<StaffUser>>("/api/users?pageSize=100");
   const list = useApi<PageResult<AuditRow>>(qs("/api/audit-logs", { userId, action, resourceType, from, to, page }));

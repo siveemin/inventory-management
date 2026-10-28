@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useHydrated } from "@/lib/client";
 
 const colors = ["#1F7A4D", "#C4622D", "#C6A15B", "#1F5678", "#6B4C7A", "#3E6B5A", "#9C341F", "#8A7350"];
 
 function Ready({ children }: { children: React.ReactNode }) {
-  const [ready, setReady] = useState(false);
-  useEffect(() => setReady(true), []);
+  const ready = useHydrated();
   if (!ready) return <div className="h-[220px] w-full min-w-0 sm:h-[260px]" />;
   return <div className="h-[220px] w-full min-w-0 sm:h-[260px]">{children}</div>;
 }

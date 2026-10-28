@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useSyncExternalStore } from "react";
+import { useHydrated } from "./client";
 import { formatKhr, formatUsd, formatWhen, type DateFormat } from "./format";
 import { translate, type Lang } from "./i18n";
 
@@ -26,25 +27,56 @@ type SettingsValue = {
 
 const SettingsContext = createContext<SettingsValue | null>(null);
 
-export function SettingsProvider({ children }: { children: React.ReactNode }) {
-  const [system, setSystem] = useState(defaultSystem);
-  const [rate, setRate] = useState(4000);
-  const [prefs, setPrefs] = useState(defaultPrefs);
-  const [ready, setReady] = useState(false);
+// Settings live in localStorage; this event tells every reader in this tab to re-read.
+const SETTINGS_EVENT = "ims:settings";
 
-  useEffect(() => {
-    try {
-      const storedSystem = localStorage.getItem("systemSettings");
-      if (storedSystem) setSystem({ ...defaultSystem, ...JSON.parse(storedSystem) });
-      const storedRate = localStorage.getItem("invoiceExchangeRate");
-      if (storedRate) setRate(Number(storedRate) || 4000);
-      const storedPrefs = localStorage.getItem("preferences");
-      if (storedPrefs) setPrefs({ ...defaultPrefs, ...JSON.parse(storedPrefs) });
-    } catch {
-      /* keep defaults */
-    }
-    setReady(true);
-  }, []);
+function subscribe(onChange: () => void) {
+  window.addEventListener("storage", onChange);
+  window.addEventListener(SETTINGS_EVENT, onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener(SETTINGS_EVENT, onChange);
+  };
+}
+
+function readStored(key: string) {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStored(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* storage blocked */
+  }
+  window.dispatchEvent(new Event(SETTINGS_EVENT));
+}
+
+function useStored(key: string) {
+  return useSyncExternalStore(subscribe, () => readStored(key), () => null);
+}
+
+function parse<T>(raw: string | null, fallback: T): T {
+  if (!raw) return fallback;
+  try {
+    return { ...fallback, ...JSON.parse(raw) };
+  } catch {
+    return fallback;
+  }
+}
+
+export function SettingsProvider({ children }: { children: React.ReactNode }) {
+  const storedSystem = useStored("systemSettings");
+  const storedRate = useStored("invoiceExchangeRate");
+  const storedPrefs = useStored("preferences");
+  const ready = useHydrated();
+  const system = useMemo(() => parse(storedSystem, defaultSystem), [storedSystem]);
+  const rate = Number(storedRate) || 4000;
+  const prefs = useMemo(() => parse(storedPrefs, defaultPrefs), [storedPrefs]);
 
   useEffect(() => {
     if (!ready) return;
@@ -59,19 +91,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       rate,
       prefs,
       ready,
-      updateSystem: (next) => {
-        setSystem(next);
-        localStorage.setItem("systemSettings", JSON.stringify(next));
-      },
+      updateSystem: (next) => writeStored("systemSettings", JSON.stringify(next)),
       updateRate: (next) => {
         const safe = Number.isFinite(next) && next > 0 ? next : 4000;
-        setRate(safe);
-        localStorage.setItem("invoiceExchangeRate", String(safe));
+        writeStored("invoiceExchangeRate", String(safe));
       },
-      updatePrefs: (next) => {
-        setPrefs(next);
-        localStorage.setItem("preferences", JSON.stringify(next));
-      },
+      updatePrefs: (next) => writeStored("preferences", JSON.stringify(next)),
     }),
     [prefs, rate, ready, system],
   );

@@ -1,12 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useToast } from "@/components/providers";
 import { Button, Card, Field, PageHeader, Select, TextInput } from "@/components/ui";
 import { formatKhr, formatUsd } from "@/lib/format";
 import { useI18n, useSettings, type Preferences, type SystemSettings } from "@/lib/settings";
 
 export default function SettingsPage() {
+  const settings = useSettings();
+  // The form starts from the saved settings, so wait until they have been read from the browser.
+  return settings.ready ? <SettingsForm /> : null;
+}
+
+function SettingsForm() {
   const { t } = useI18n();
   const toast = useToast();
   const settings = useSettings();
@@ -14,12 +20,6 @@ export default function SettingsPage() {
   const [system, setSystem] = useState<SystemSettings>(settings.system);
   const [rate, setRate] = useState(String(settings.rate));
   const [prefs, setPrefs] = useState<Preferences>(settings.prefs);
-  useEffect(() => {
-    if (!settings.ready) return;
-    setSystem(settings.system);
-    setRate(String(settings.rate));
-    setPrefs(settings.prefs);
-  }, [settings.ready, settings.system, settings.rate, settings.prefs]);
   const sample = 12.5;
   const numericRate = Number(rate) || 0;
 

@@ -1,4 +1,4 @@
-# Sovann
+# IMS — Inventory Management System
 
 Inventory and warehouse management for a Cambodian trading business. It tracks products across warehouses, purchase and sales orders, transfers, barcode lookup, Khmer invoices, and USD/KHR pricing.
 

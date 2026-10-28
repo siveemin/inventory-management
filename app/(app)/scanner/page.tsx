@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { KhmerInvoice, toInvoice } from "@/components/invoice";
 import { useAuth, useToast } from "@/components/providers";
 import { BarcodeCameraScanner, HardwareScanListener, QtyStepper } from "@/components/scanner";
@@ -29,20 +29,18 @@ export default function ScannerPage() {
   const [discount, setDiscount] = useState("0");
   const [checkout, setCheckout] = useState(false);
   const [customerId, setCustomerId] = useState("");
-  const [warehouseId, setWarehouseId] = useState("");
+  const [pickedWarehouseId, setWarehouseId] = useState("");
   const [invoice, setInvoice] = useState<SalesOrder | null>(null);
   const [action, setAction] = useState<"STOCK_IN" | "STOCK_OUT" | "TRANSFER" | null>(null);
   const [qty, setQty] = useState("1");
   const [notes, setNotes] = useState("");
-  const [dest, setDest] = useState("");
+  const [pickedDest, setDest] = useState("");
   const [busy, setBusy] = useState(false);
   const last = useRef({ code: "", at: 0 });
 
-  useEffect(() => {
-    if (warehouseId || !meta.data) return;
-    setWarehouseId(user?.warehouseId || meta.data.warehouses[0]?.id || "");
-    setDest(meta.data.warehouses[1]?.id || "");
-  }, [meta.data, user, warehouseId]);
+  // Until the user picks, work in their own warehouse (or the first one) and transfer to the second.
+  const warehouseId = pickedWarehouseId || user?.warehouseId || meta.data?.warehouses[0]?.id || "";
+  const dest = pickedDest || meta.data?.warehouses[1]?.id || "";
 
   const lookup = useCallback(async (value: string) => {
     const clean = value.trim();

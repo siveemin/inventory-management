@@ -36,9 +36,13 @@ export default function ProductsPage() {
   const [supplierId, setSupplierId] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
-  const [open, setOpen] = useState(false);
+  // Arriving from the scanner with ?barcode= opens a new product form with that barcode filled in.
+  const [scannedBarcode] = useState(() =>
+    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("barcode"),
+  );
+  const [open, setOpen] = useState(Boolean(scannedBarcode));
   const [editing, setEditing] = useState<Product | null>(null);
-  const [form, setForm] = useState<Form>(blank());
+  const [form, setForm] = useState<Form>(() => blank(scannedBarcode || undefined));
   const [busy, setBusy] = useState(false);
   const [remove, setRemove] = useState<Product | null>(null);
   const meta = useApi<Meta>("/api/meta");
@@ -54,15 +58,6 @@ export default function ProductsPage() {
     };
     window.addEventListener(PRODUCT_SEARCH_EVENT, onSearch);
     return () => window.removeEventListener(PRODUCT_SEARCH_EVENT, onSearch);
-  }, []);
-
-  useEffect(() => {
-    const barcode = new URLSearchParams(window.location.search).get("barcode");
-    if (barcode) {
-      setForm(blank(barcode));
-      setEditing(null);
-      setOpen(true);
-    }
   }, []);
 
   function edit(product: Product) {

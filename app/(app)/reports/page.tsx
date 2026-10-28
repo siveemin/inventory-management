@@ -17,8 +17,8 @@ export default function ReportsPage() {
   const { t } = useI18n();
   const money = useFormat();
   const [tab, setTab] = useState("sales");
-  const [from, setFrom] = useState(toDateInput(new Date(Date.now() - 29 * 86400000)));
-  const [to, setTo] = useState(toDateInput());
+  const [from, setFrom] = useState(() => toDateInput(new Date(Date.now() - 29 * 86400000)));
+  const [to, setTo] = useState(() => toDateInput());
   const [type, setType] = useState("");
   const [warehouseId, setWarehouseId] = useState("");
   const meta = useApi<Meta>("/api/meta");

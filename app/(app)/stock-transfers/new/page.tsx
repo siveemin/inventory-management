@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { blankLine, LineEditor, type DraftLine } from "@/components/lines";
 import { useToast } from "@/components/providers";
 import { Button, Card, Field, PageHeader, Select, TextArea } from "@/components/ui";
@@ -14,17 +14,15 @@ export default function NewTransferPage() {
   const toast = useToast();
   const router = useRouter();
   const meta = useApi<Meta>("/api/meta");
-  const [source, setSource] = useState("");
-  const [dest, setDest] = useState("");
+  const [pickedSource, setSource] = useState("");
+  const [pickedDest, setDest] = useState("");
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState<DraftLine[]>([blankLine()]);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    if (!meta.data || source) return;
-    setSource(meta.data.warehouses[0]?.id || "");
-    setDest(meta.data.warehouses[1]?.id || "");
-  }, [meta.data, source]);
+  // Until the user picks, move stock from the first warehouse to the second.
+  const source = pickedSource || meta.data?.warehouses[0]?.id || "";
+  const dest = pickedDest || meta.data?.warehouses[1]?.id || "";
 
   async function save(status: "DRAFT" | "PENDING_APPROVAL") {
     setBusy(true);

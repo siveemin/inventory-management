@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { blankLine, LineEditor, type DraftLine } from "@/components/lines";
 import { useToast } from "@/components/providers";
 import { Button, Card, Field, PageHeader, Select, TextArea, TextInput } from "@/components/ui";
@@ -11,31 +11,37 @@ import { useFormat, useI18n } from "@/lib/settings";
 import type { Meta } from "@/lib/types";
 
 export default function NewPurchaseOrderPage() {
+  return (
+    <Suspense>
+      <NewPurchaseOrder />
+    </Suspense>
+  );
+}
+
+function NewPurchaseOrder() {
   const { t } = useI18n();
   const money = useFormat();
   const toast = useToast();
   const router = useRouter();
+  const params = useSearchParams();
   const meta = useApi<Meta>("/api/meta");
-  const [supplierId, setSupplierId] = useState("");
-  const [warehouseId, setWarehouseId] = useState("");
-  const [expected, setExpected] = useState(toDateInput(new Date(Date.now() + 3 * 86400000)));
+  // Until the user picks something, the form shows the defaults from the link (?supplierId, ?warehouseId, ?productId).
+  const [pickedSupplierId, setSupplierId] = useState("");
+  const [pickedWarehouseId, setWarehouseId] = useState("");
+  const [expected, setExpected] = useState(() => toDateInput(new Date(Date.now() + 3 * 86400000)));
   const [notes, setNotes] = useState("");
-  const [lines, setLines] = useState<DraftLine[]>([blankLine()]);
+  const [editedLines, setLines] = useState<DraftLine[] | null>(null);
+  const [blankLines] = useState<DraftLine[]>(() => [blankLine()]);
   const [busy, setBusy] = useState(false);
-  const [ready, setReady] = useState(false);
 
-  useEffect(() => {
-    if (!meta.data || ready) return;
-    const params = new URLSearchParams(window.location.search);
-    const productId = params.get("productId") || "";
-    const product = meta.data.products.find((item) => item.id === productId);
-    setSupplierId(params.get("supplierId") || meta.data.suppliers[0]?.id || "");
-    setWarehouseId(params.get("warehouseId") || meta.data.warehouses[0]?.id || "");
-    if (product) {
-      setLines([{ key: "prefill", productId: product.id, quantity: String(Math.max(1, Math.ceil(product.minStock || 1))), price: String(product.costPrice) }]);
-    }
-    setReady(true);
-  }, [meta.data, ready]);
+  const supplierId = pickedSupplierId || params.get("supplierId") || meta.data?.suppliers[0]?.id || "";
+  const warehouseId = pickedWarehouseId || params.get("warehouseId") || meta.data?.warehouses[0]?.id || "";
+  const product = meta.data?.products.find((item) => item.id === params.get("productId"));
+  const lines =
+    editedLines ??
+    (product
+      ? [{ key: "prefill", productId: product.id, quantity: String(Math.max(1, Math.ceil(product.minStock || 1))), price: String(product.costPrice) }]
+      : blankLines);
 
   const total = round2(lines.reduce((sum, line) => sum + (Number(line.quantity) || 0) * (Number(line.price) || 0), 0));
 

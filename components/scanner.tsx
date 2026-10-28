@@ -5,7 +5,9 @@ import { Button } from "./ui";
 
 export function HardwareScanListener({ onScan, disabled }: { onScan: (code: string) => void; disabled?: boolean }) {
   const onScanRef = useRef(onScan);
-  onScanRef.current = onScan;
+  useEffect(() => {
+    onScanRef.current = onScan;
+  });
   useEffect(() => {
     if (disabled) return;
     let buffer = "";
@@ -39,7 +41,9 @@ export function HardwareScanListener({ onScan, disabled }: { onScan: (code: stri
 export function BarcodeCameraScanner({ onScan }: { onScan: (code: string) => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const onScanRef = useRef(onScan);
-  onScanRef.current = onScan;
+  useEffect(() => {
+    onScanRef.current = onScan;
+  });
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
