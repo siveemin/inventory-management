@@ -9,7 +9,7 @@ type Ctx = { params: Promise<{ id: string }> };
 const include = {
   customer: true,
   warehouse: true,
-  items: { include: { product: { select: { id: true, name: true, sku: true } } } },
+  items: { orderBy: { createdAt: "asc" as const }, include: { product: { select: { id: true, name: true, sku: true } } } },
 };
 
 export async function GET(req: Request, ctx: Ctx) {
@@ -22,7 +22,7 @@ export async function GET(req: Request, ctx: Ctx) {
 
 export async function PATCH(req: Request, ctx: Ctx) {
   return authed(req, async (user) => {
-    const body = await readJson<{ action?: string }>(req);
-    return ok(await transitionSalesOrder((await ctx.params).id, body.action || "", user.id));
+    const body = await readJson<Record<string, unknown>>(req);
+    return ok(await transitionSalesOrder((await ctx.params).id, String(body.action || ""), user.id, body));
   });
 }

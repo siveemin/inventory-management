@@ -48,7 +48,7 @@ export default function PurchaseOrderDetailPage() {
           <Card className="mb-4 grid gap-2 p-5 text-sm md:grid-cols-3">
             <p>{t("label.date")}: {money.date(data.orderDate)}</p>
             <p>{t("label.expected")}: {money.date(data.expectedDelivery)}</p>
-            <p>{t("label.total")}: {money.usd(data.total)}</p>
+            <p>{t("label.total")}: {money.amount(data.total)}</p>
             {data.notes ? <p className="md:col-span-3">{data.notes}</p> : null}
           </Card>
           <Card>
@@ -59,7 +59,7 @@ export default function PurchaseOrderDetailPage() {
                   <tr key={item.id} className="border-t border-line">
                     <Td>{item.product?.name}<div className="text-xs text-ink-soft">{item.product?.sku}</div></Td>
                     <Td className="tabular-nums">{item.quantity}</Td>
-                    <Td className="tabular-nums">{money.usd(item.unitCost)}</Td>
+                    <Td className="tabular-nums">{money.amount(item.unitCost)}</Td>
                     <Td className="tabular-nums">{item.receivedQty}</Td>
                     {canReceive ? (
                       <Td>

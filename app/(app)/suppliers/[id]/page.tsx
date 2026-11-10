@@ -30,7 +30,7 @@ export default function SupplierDetailPage() {
                     <tr key={order.id} className="border-t border-line">
                       <Td><Link className="text-forest" href={`/purchase-orders/${order.id}`}>{order.orderNumber}</Link></Td>
                       <Td><StatusBadge status={order.status} label={t(`status.${order.status}`)} /></Td>
-                      <Td>{money.usd(order.total)}</Td>
+                      <Td>{money.amount(order.total)}</Td>
                     </tr>
                   ))}
                 </tbody>
@@ -45,7 +45,7 @@ export default function SupplierDetailPage() {
                     <tr key={product.id} className="border-t border-line">
                       <Td>{product.name}</Td>
                       <Td>{product.sku}</Td>
-                      <Td>{money.usd(product.costPrice)}</Td>
+                      <Td>{money.amount(product.costPrice)}</Td>
                     </tr>
                   ))}
                 </tbody>

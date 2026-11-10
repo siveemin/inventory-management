@@ -1,4 +1,5 @@
 "use client";
+import { MoneyInput } from "@/components/money-input";
 
 import { useEffect, useState } from "react";
 import { api, qs, useApi } from "@/lib/client";
@@ -158,8 +159,8 @@ export default function ProductsPage() {
                     <Td className="font-medium">{product.name}</Td>
                     <Td>{product.sku}</Td>
                     <Td>{product.category?.name}</Td>
-                    <Td className="tabular-nums">{money.usd(product.costPrice)}</Td>
-                    <Td className="tabular-nums">{money.usd(product.sellingPrice)}</Td>
+                    <Td className="tabular-nums">{money.amount(product.costPrice)}</Td>
+                    <Td className="tabular-nums">{money.amount(product.sellingPrice)}</Td>
                     <Td className="tabular-nums">{product.totalStock ?? 0}</Td>
                     <Td><StatusBadge status={product.status} label={t(`status.${product.status}`)} /></Td>
                     <Td>
@@ -195,8 +196,8 @@ export default function ProductsPage() {
               {meta.data?.suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}
             </Select>
           </Field>
-          <Field label={t("label.cost")}><TextInput type="number" min="0" step="0.01" value={form.costPrice} onChange={(event) => set("costPrice", event.target.value)} /></Field>
-          <Field label={t("label.selling")}><TextInput type="number" min="0" step="0.01" value={form.sellingPrice} onChange={(event) => set("sellingPrice", event.target.value)} /></Field>
+          <Field label={t("label.cost")}><MoneyInput value={form.costPrice} onChange={(usd) => set("costPrice", usd)} /></Field>
+          <Field label={t("label.selling")}><MoneyInput value={form.sellingPrice} onChange={(usd) => set("sellingPrice", usd)} /></Field>
           <Field label={t("label.discount")}><TextInput type="number" min="0" max="100" step="0.1" value={form.discountPct} onChange={(event) => set("discountPct", event.target.value)} /></Field>
           <Field label={t("label.min")}><TextInput type="number" min="0" value={form.minStock} onChange={(event) => set("minStock", event.target.value)} /></Field>
           <Field label={t("label.max")}><TextInput type="number" min="0" value={form.maxStock} onChange={(event) => set("maxStock", event.target.value)} /></Field>

@@ -6,7 +6,17 @@ const soldStatuses = ["CONFIRMED", "PROCESSING", "COMPLETED"];
 
 export async function lowStockRows() {
   const rows = await prisma.productInventory.findMany({
-    include: { product: true, warehouse: true },
+    select: {
+      id: true,
+      productId: true,
+      warehouseId: true,
+      quantity: true,
+      updatedAt: true,
+      product: { select: { name: true, sku: true, status: true, minStock: true, supplierId: true } },
+      warehouse: { select: { name: true } },
+    },
+    // Only rows that can be short: skip products with no minimum set.
+    where: { product: { status: "ACTIVE", minStock: { gt: 0 } } },
     orderBy: { updatedAt: "desc" },
   });
   return rows
@@ -29,11 +39,36 @@ export async function lowStockRows() {
 }
 
 export async function dashboardData() {
-  const products = await prisma.product.findMany({ include: { category: true, inventory: true } });
-  const low = await lowStockRows();
-  const [openPurchases, openSales] = await Promise.all([
+  const start = new Date();
+  start.setDate(start.getDate() - 29);
+  // One parallel round instead of five sequential trips to the database.
+  const [products, low, openPurchases, openSales, sales, activity] = await Promise.all([
+    prisma.product.findMany({
+      select: {
+        costPrice: true,
+        category: { select: { name: true } },
+        inventory: { select: { quantity: true } },
+      },
+    }),
+    lowStockRows(),
     prisma.purchaseOrder.count({ where: { status: { in: ["SUBMITTED", "APPROVED", "PARTIALLY_RECEIVED"] } } }),
     prisma.salesOrder.count({ where: { status: { in: ["CONFIRMED", "PROCESSING"] } } }),
+    prisma.salesOrder.findMany({
+      where: { status: { in: soldStatuses }, orderDate: { gte: start } },
+      select: { orderDate: true, total: true },
+    }),
+    prisma.inventoryTransaction.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      select: {
+        id: true,
+        type: true,
+        quantity: true,
+        createdAt: true,
+        product: { select: { name: true } },
+        warehouse: { select: { name: true } },
+      },
+    }),
   ]);
   const byCategory = new Map<string, number>();
   let stockValue = 0;
@@ -42,11 +77,6 @@ export async function dashboardData() {
     stockValue += qty * product.costPrice;
     byCategory.set(product.category.name, (byCategory.get(product.category.name) || 0) + qty);
   }
-  const start = new Date();
-  start.setDate(start.getDate() - 29);
-  const sales = await prisma.salesOrder.findMany({
-    where: { status: { in: soldStatuses }, orderDate: { gte: start } },
-  });
   const today = dayKey(new Date());
   const keys: string[] = [];
   for (let i = 29; i >= 0; i--) keys.push(shiftDay(today, -i));
@@ -55,11 +85,6 @@ export async function dashboardData() {
     const key = dayKey(order.orderDate);
     if (buckets.has(key)) buckets.set(key, (buckets.get(key) || 0) + order.total);
   }
-  const activity = await prisma.inventoryTransaction.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 10,
-    include: { product: true, warehouse: true },
-  });
   return {
     kpis: {
       products: products.length,
@@ -100,7 +125,7 @@ export async function forecastData() {
     prisma.product.findMany({ where: { status: "ACTIVE" }, include: { inventory: true }, orderBy: { name: "asc" } }),
   ]);
   const qtyByProduct = new Map<string, number>();
-  for (const item of sold) qtyByProduct.set(item.productId, (qtyByProduct.get(item.productId) || 0) + item.quantity);
+  for (const item of sold) qtyByProduct.set(item.productId, (qtyByProduct.get(item.productId) || 0) + item.quantity - item.returnedQty);
   const items = products.map((product) => {
     const soldQty = qtyByProduct.get(product.id) || 0;
     const dailyAvg = soldQty / 90;
@@ -182,8 +207,8 @@ export async function reportData(url: URL) {
     const map = new Map<string, { name: string; sku: string; quantity: number; revenue: number }>();
     for (const item of items) {
       const current = map.get(item.productId) || { name: item.product.name, sku: item.product.sku, quantity: 0, revenue: 0 };
-      current.quantity += item.quantity;
-      current.revenue += item.quantity * item.unitPrice;
+      current.quantity += item.quantity - item.returnedQty;
+      current.revenue += (item.quantity - item.returnedQty) * item.unitPrice;
       map.set(item.productId, current);
     }
     return {

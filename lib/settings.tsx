@@ -2,17 +2,18 @@
 
 import { createContext, useContext, useEffect, useMemo, useSyncExternalStore } from "react";
 import { useHydrated } from "./client";
-import { formatKhr, formatUsd, formatWhen, type DateFormat } from "./format";
+import { formatKhr, formatUsd, formatWhen, type Currency, type DateFormat } from "./format";
 import { translate, type Lang } from "./i18n";
 
 export type SystemSettings = { name: string; subtitle: string };
-export type Preferences = { language: Lang; dateFormat: DateFormat; timezone: string };
+export type Preferences = { language: Lang; dateFormat: DateFormat; timezone: string; currency: Currency };
 
 const defaultSystem: SystemSettings = { name: "IMS", subtitle: "Inventory Management System" };
 const defaultPrefs: Preferences = {
   language: "en",
   dateFormat: "DD/MM/YYYY",
   timezone: "Asia/Phnom_Penh",
+  currency: "KHR",
 };
 
 type SettingsValue = {
@@ -120,8 +121,19 @@ export function useI18n() {
 
 export function useFormat() {
   const { prefs, rate } = useSettings();
+  const currency: Currency = prefs.currency === "USD" ? "USD" : "KHR";
+  const inKhr = currency === "KHR";
   return {
     rate,
+    currency,
+    /** Display a stored USD amount in the chosen currency. */
+    amount: (n: number) => (inKhr ? formatKhr((n || 0) * rate) : formatUsd(n)),
+    /** The same amount in the other currency, for a secondary line. */
+    other: (n: number) => (inKhr ? formatUsd(n) : formatKhr((n || 0) * rate)),
+    /** Convert a stored USD amount to the number shown on charts / in inputs. */
+    toDisplay: (n: number) => (inKhr ? Math.round((n || 0) * rate) : n || 0),
+    /** Convert a typed amount in the chosen currency back to stored USD. */
+    fromDisplay: (n: number) => (inKhr ? (n || 0) / rate : n || 0),
     usd: (n: number) => formatUsd(n),
     khr: (n: number) => formatKhr((n || 0) * rate),
     khrAmount: (n: number) => formatKhr(n),

@@ -42,12 +42,15 @@ export default function SalesOrdersPage() {
             <tbody>
               {list.data.data.map((order) => (
                 <tr key={order.id} className="border-t border-line">
-                  <Td><Link className="font-medium text-forest" href={`/sales-orders/${order.id}`}>{order.orderNumber}</Link></Td>
+                  <Td>
+                    <Link className="font-medium text-forest" href={`/sales-orders/${order.id}`}>{order.orderNumber}</Link>
+                    {order.kind === "CONSIGN" ? <div className="text-xs text-ink-soft">{t("kind.CONSIGN")}</div> : null}
+                  </Td>
                   <Td>{order.customer?.name || t("label.walkIn")}</Td>
                   <Td>{order.warehouse?.name}</Td>
                   <Td>{money.date(order.orderDate)}</Td>
                   <Td><StatusBadge status={order.status} label={t(`status.${order.status}`)} /></Td>
-                  <Td className="tabular-nums">{money.usd(order.total)}</Td>
+                  <Td className="tabular-nums">{money.amount(order.total)}</Td>
                 </tr>
               ))}
             </tbody>

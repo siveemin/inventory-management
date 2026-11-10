@@ -87,7 +87,7 @@ function NewPurchaseOrder() {
         <LineEditor lines={lines} onChange={setLines} products={meta.data?.products || []} showPrice priceLabel={t("label.cost")} priceOf={(product) => product.costPrice} />
         <Field label={t("label.notes")}><TextArea value={notes} onChange={(event) => setNotes(event.target.value)} /></Field>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="font-serif text-3xl tabular-nums">{money.usd(total)}</p>
+          <p className="font-serif text-3xl tabular-nums">{money.amount(total)}</p>
           <div className="flex gap-2">
             <Button variant="outline" disabled={busy} onClick={() => save("DRAFT")}>{t("action.saveDraft")}</Button>
             <Button disabled={busy} onClick={() => save("SUBMITTED")}>{t("action.submit")}</Button>

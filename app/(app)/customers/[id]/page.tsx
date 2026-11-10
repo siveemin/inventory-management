@@ -2,16 +2,18 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Card, ErrorNote, LoadingBlock, PageHeader, StatusBadge, Table, Td, Th } from "@/components/ui";
+import { CustomerHistory } from "@/components/customer-history";
+import { CustomerPricesCard } from "@/components/customer-prices";
+import { OpenInvoiceCard } from "@/components/open-invoice";
+import { Card, ErrorNote, LoadingBlock, PageHeader, StatusBadge } from "@/components/ui";
 import { useApi } from "@/lib/client";
-import { useFormat, useI18n } from "@/lib/settings";
-import type { Party, SalesOrder } from "@/lib/types";
+import { useI18n } from "@/lib/settings";
+import type { Party } from "@/lib/types";
 
 export default function CustomerDetailPage() {
   const params = useParams<{ id: string }>();
   const { t } = useI18n();
-  const money = useFormat();
-  const customer = useApi<Party & { salesOrders: SalesOrder[] }>(`/api/customers/${params.id}`);
+  const customer = useApi<Party>(`/api/customers/${params.id}`);
   const data = customer.data;
   return (
     <div>
@@ -25,22 +27,9 @@ export default function CustomerDetailPage() {
             <p>{data.address}</p>
             {data.notes ? <p className="mt-2 text-ink-soft">{data.notes}</p> : null}
           </Card>
-          <Card>
-            <h2 className="px-5 pt-5 font-serif text-2xl">{t("nav.sales")}</h2>
-            <Table>
-              <thead><tr><Th>{t("label.order")}</Th><Th>{t("label.date")}</Th><Th>{t("label.status")}</Th><Th>{t("label.total")}</Th></tr></thead>
-              <tbody>
-                {data.salesOrders.map((order) => (
-                  <tr key={order.id} className="border-t border-line">
-                    <Td><Link className="text-forest" href={`/sales-orders/${order.id}`}>{order.orderNumber}</Link></Td>
-                    <Td>{money.date(order.orderDate)}</Td>
-                    <Td><StatusBadge status={order.status} label={t(`status.${order.status}`)} /></Td>
-                    <Td>{money.usd(order.total)}</Td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </Card>
+          <OpenInvoiceCard customerId={data.id} />
+          <CustomerPricesCard customerId={data.id} />
+          <CustomerHistory customerId={data.id} />
         </>
       )}
     </div>

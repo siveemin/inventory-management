@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useToast } from "@/components/providers";
 import { Button, Card, ConfirmDialog, EmptyState, ErrorNote, Field, LoadingBlock, Modal, PageHeader, Pagination, SearchBar, Select, StatusBadge, Table, Td, TextArea, TextInput, Th } from "@/components/ui";
 import { api, qs, useApi } from "@/lib/client";
-import { useI18n } from "@/lib/settings";
+import { useFormat, useI18n } from "@/lib/settings";
 import type { PageResult, Party } from "@/lib/types";
 
 const empty = { name: "", contactPerson: "", email: "", phone: "", address: "", city: "", country: "Cambodia", notes: "", status: "ACTIVE" };
@@ -13,6 +14,8 @@ const empty = { name: "", contactPerson: "", email: "", phone: "", address: "", 
 export function PartyPage({ kind }: { kind: "customers" | "suppliers" }) {
   const { t } = useI18n();
   const toast = useToast();
+  const router = useRouter();
+  const money = useFormat();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
@@ -34,10 +37,12 @@ export function PartyPage({ kind }: { kind: "customers" | "suppliers" }) {
     event.preventDefault();
     setBusy(true);
     try {
-      await api(editing ? `/api/${kind}/${editing.id}` : `/api/${kind}`, { method: editing ? "PATCH" : "POST", body: JSON.stringify(form) });
+      const saved = await api<{ id: string }>(editing ? `/api/${kind}/${editing.id}` : `/api/${kind}`, { method: editing ? "PATCH" : "POST", body: JSON.stringify(form) });
       toast(t("common.saved"));
       setOpen(false);
-      list.reload();
+      // A new customer goes straight to their page, where their own prices are set.
+      if (!editing && kind === "customers") router.push(`/customers/${saved.id}`);
+      else list.reload();
     } catch (error) {
       toast(error instanceof Error ? error.message : "Could not save", "bad");
     } finally {
@@ -60,7 +65,7 @@ export function PartyPage({ kind }: { kind: "customers" | "suppliers" }) {
         </div>
         {list.loading ? <LoadingBlock /> : !list.data?.data.length ? <EmptyState title={t("empty.title")} body={t("empty.body")} /> : (
           <Table>
-            <thead><tr><Th>{t("label.name")}</Th><Th>{t("label.email")}</Th><Th>{t("label.phone")}</Th><Th>{t("label.city")}</Th><Th>{t("label.status")}</Th><Th /></tr></thead>
+            <thead><tr><Th>{t("label.name")}</Th><Th>{t("label.email")}</Th><Th>{t("label.phone")}</Th><Th>{t("label.city")}</Th>{kind === "customers" ? <Th>{t("open.invoice")}</Th> : null}<Th>{t("label.status")}</Th><Th /></tr></thead>
             <tbody>
               {list.data.data.map((row) => (
                 <tr key={row.id} className="border-t border-line">
@@ -68,6 +73,13 @@ export function PartyPage({ kind }: { kind: "customers" | "suppliers" }) {
                   <Td>{row.email}</Td>
                   <Td>{row.phone}</Td>
                   <Td>{row.city}</Td>
+                  {kind === "customers" ? (
+                    <Td>
+                      {row.openInvoice ? (
+                        <Link href={`/sales-orders/${row.openInvoice.id}`} className="font-semibold tabular-nums text-copper">{money.amount(row.openInvoice.total)}</Link>
+                      ) : <span className="text-ink-soft">—</span>}
+                    </Td>
+                  ) : null}
                   <Td><StatusBadge status={row.status} label={t(`status.${row.status}`)} /></Td>
                   <Td>
                     <div className="flex gap-2">

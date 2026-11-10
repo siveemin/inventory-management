@@ -19,8 +19,8 @@ export function StockBars({ data }: { data: { name: string; quantity: number }[]
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data}>
           <CartesianGrid stroke="#E4DCD0" vertical={false} />
-          <XAxis dataKey="name" tick={{ fill: "#6F675E", fontSize: 12 }} interval={0} angle={-18} height={60} textAnchor="end" />
-          <YAxis tick={{ fill: "#6F675E", fontSize: 12 }} />
+          <XAxis dataKey="name" tick={{ fill: "#6F675E", fontSize: 11 }} interval="preserveStartEnd" angle={-18} height={60} textAnchor="end" />
+          <YAxis tick={{ fill: "#6F675E", fontSize: 11 }} width={40} />
           <Tooltip contentStyle={tipStyle} />
           <Bar dataKey="quantity" fill="#1F7A4D" radius={[8, 8, 0, 0]} />
         </BarChart>
@@ -36,7 +36,7 @@ export function SalesLine({ data }: { data: { label: string; total: number }[] }
         <LineChart data={data}>
           <CartesianGrid stroke="#E4DCD0" vertical={false} />
           <XAxis dataKey="label" tick={{ fill: "#6F675E", fontSize: 11 }} minTickGap={24} />
-          <YAxis tick={{ fill: "#6F675E", fontSize: 12 }} />
+          <YAxis tick={{ fill: "#6F675E", fontSize: 11 }} width={44} />
           <Tooltip contentStyle={tipStyle} />
           <Line type="monotone" dataKey="total" stroke="#C4622D" strokeWidth={2.4} dot={false} />
         </LineChart>

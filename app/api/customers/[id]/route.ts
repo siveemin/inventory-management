@@ -9,12 +9,8 @@ type Ctx = { params: Promise<{ id: string }> };
 export async function GET(req: Request, ctx: Ctx) {
   return authed(req, async () => {
     const { id } = await ctx.params;
-    const customer = await prisma.customer.findUnique({
-      where: { id },
-      include: {
-        salesOrders: { orderBy: { orderDate: "desc" }, take: 8, include: { warehouse: true } },
-      },
-    });
+    // Orders come from /api/customers/[id]/history, which pages through all of them.
+    const customer = await prisma.customer.findUnique({ where: { id } });
     if (!customer) return ok({ error: "Customer not found." }, 404);
     return ok(customer);
   });

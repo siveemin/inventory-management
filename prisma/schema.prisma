@@ -11,36 +11,36 @@ datasource db {
 }
 
 model User {
-  id            String                 @id @default(cuid())
-  name          String
-  email         String                 @unique
-  password      String
-  role          String
-  phone         String?
-  avatarUrl     String?
-  status        String                 @default("ACTIVE")
-  warehouseId   String?
-  warehouse     Warehouse?             @relation(fields: [warehouseId], references: [id])
-  auditLogs     AuditLog[]
-  transactions  InventoryTransaction[]
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
+  id           String                 @id @default(cuid())
+  name         String
+  email        String                 @unique
+  password     String
+  role         String
+  phone        String?
+  avatarUrl    String?
+  status       String                 @default("ACTIVE")
+  warehouseId  String?
+  warehouse    Warehouse?             @relation(fields: [warehouseId], references: [id])
+  auditLogs    AuditLog[]
+  transactions InventoryTransaction[]
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
 }
 
 model Warehouse {
-  id               String                 @id @default(cuid())
-  name             String
-  code             String                 @unique
-  address          String?
-  city             String?
-  users            User[]
-  inventory        ProductInventory[]
-  transactions     InventoryTransaction[]
-  purchaseOrders   PurchaseOrder[]
-  salesOrders      SalesOrder[]
-  transfersFrom    StockTransfer[]        @relation("TransferFrom")
-  transfersTo      StockTransfer[]        @relation("TransferTo")
-  createdAt        DateTime               @default(now())
+  id             String                 @id @default(cuid())
+  name           String
+  code           String                 @unique
+  address        String?
+  city           String?
+  users          User[]
+  inventory      ProductInventory[]
+  transactions   InventoryTransaction[]
+  purchaseOrders PurchaseOrder[]
+  salesOrders    SalesOrder[]
+  transfersFrom  StockTransfer[]        @relation("TransferFrom")
+  transfersTo    StockTransfer[]        @relation("TransferTo")
+  createdAt      DateTime               @default(now())
 }
 
 model Category {
@@ -71,46 +71,48 @@ model Supplier {
 }
 
 model Customer {
-  id            String       @id @default(cuid())
+  id            String          @id @default(cuid())
   name          String
   contactPerson String?
   email         String?
   phone         String?
   address       String?
   city          String?
-  country       String       @default("Cambodia")
+  country       String          @default("Cambodia")
   notes         String?
-  status        String       @default("ACTIVE")
+  status        String          @default("ACTIVE")
   salesOrders   SalesOrder[]
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  prices        CustomerPrice[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 }
 
 model Product {
-  id            String                 @id @default(cuid())
-  name          String
-  sku           String                 @unique
-  barcode       String?                @unique
-  description   String?
-  categoryId    String
-  category      Category               @relation(fields: [categoryId], references: [id])
-  supplierId    String?
-  supplier      Supplier?              @relation(fields: [supplierId], references: [id])
-  uom           String                 @default("pcs")
-  costPrice     Float
-  sellingPrice  Float
-  discountPct   Float                  @default(0)
-  minStock      Float                  @default(0)
-  maxStock      Float                  @default(0)
-  imageUrl      String?
-  status        String                 @default("ACTIVE")
-  inventory     ProductInventory[]
-  transactions  InventoryTransaction[]
-  poItems       PurchaseOrderItem[]
-  soItems       SalesOrderItem[]
-  transferItems StockTransferItem[]
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
+  id             String                 @id @default(cuid())
+  name           String
+  sku            String                 @unique
+  barcode        String?                @unique
+  description    String?
+  categoryId     String
+  category       Category               @relation(fields: [categoryId], references: [id])
+  supplierId     String?
+  supplier       Supplier?              @relation(fields: [supplierId], references: [id])
+  uom            String                 @default("pcs")
+  costPrice      Float
+  sellingPrice   Float
+  discountPct    Float                  @default(0)
+  minStock       Float                  @default(0)
+  maxStock       Float                  @default(0)
+  imageUrl       String?
+  status         String                 @default("ACTIVE")
+  inventory      ProductInventory[]
+  transactions   InventoryTransaction[]
+  poItems        PurchaseOrderItem[]
+  soItems        SalesOrderItem[]
+  customerPrices CustomerPrice[]
+  transferItems  StockTransferItem[]
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
 }
 
 model ProductInventory {
@@ -189,6 +191,8 @@ model SalesOrder {
   orderDate    DateTime         @default(now())
   deliveryDate DateTime?
   status       String           @default("DRAFT")
+  // SALE = normal sale; CONSIGN = customer takes goods, returns leftovers later, pays for what was sold.
+  kind         String           @default("SALE")
   notes        String?
   discount     Float            @default(0)
   taxPct       Float            @default(0)
@@ -205,13 +209,16 @@ model SalesOrder {
 }
 
 model SalesOrderItem {
-  id        String     @id @default(cuid())
-  orderId   String
-  order     SalesOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product    @relation(fields: [productId], references: [id])
-  quantity  Float
-  unitPrice Float
+  id          String     @id @default(cuid())
+  orderId     String
+  order       SalesOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product    @relation(fields: [productId], references: [id])
+  quantity    Float
+  unitPrice   Float
+  returnedQty Float      @default(0)
+  // When this line was added: an open invoice collects products over several days.
+  createdAt   DateTime   @default(now())
 }
 
 model StockTransfer {
@@ -256,4 +263,19 @@ model AuditLog {
   @@index([createdAt])
   @@index([action])
   @@index([resourceType])
+}
+
+// A customer's own price for a product (USD, like every stored amount).
+// Used instead of the product's selling price when making an order for them.
+model CustomerPrice {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  price      Float
+  updatedAt  DateTime @updatedAt
+
+  @@unique([customerId, productId])
+  @@index([customerId])
 }

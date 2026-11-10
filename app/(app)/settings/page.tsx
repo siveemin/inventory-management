@@ -61,6 +61,12 @@ function SettingsForm() {
               <option value="km">ភាសាខ្មែរ</option>
             </Select>
           </Field>
+          <Field label={t("label.currency")} hint={t("settings.currencyHint")}>
+            <Select value={prefs.currency || "KHR"} onChange={(event) => setPrefs({ ...prefs, currency: event.target.value as Preferences["currency"] })}>
+              <option value="KHR">៛ រៀល (Riel)</option>
+              <option value="USD">$ ដុល្លារ (Dollar)</option>
+            </Select>
+          </Field>
           <Field label={t("label.dateFormat")}>
             <Select value={prefs.dateFormat} onChange={(event) => setPrefs({ ...prefs, dateFormat: event.target.value as Preferences["dateFormat"] })}>
               <option value="DD/MM/YYYY">DD/MM/YYYY</option>

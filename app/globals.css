@@ -36,6 +36,10 @@
   --font-serif: var(--font-fraunces), Georgia, "Times New Roman", serif;
 }
 
+:root {
+  --font-khmer: "Khmer OS Battambang", var(--font-khmer-web), "Battambang";
+}
+
 * { box-sizing: border-box; }
 
 html, body { min-height: 100%; }
@@ -43,7 +47,8 @@ html, body { min-height: 100%; }
 body {
   background: var(--paper);
   color: var(--ink);
-  font-family: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  /* Latin text uses Outfit; any Khmer characters fall through to Khmer OS Battambang. */
+  font-family: var(--font-outfit), var(--font-khmer), ui-sans-serif, system-ui, sans-serif;
 }
 
 html[data-lang="km"] body,
@@ -80,4 +85,15 @@ button, input, select, textarea { font: inherit; }
     radial-gradient(800px 420px at 0% 0%, rgba(31, 122, 77, 0.5), transparent 55%),
     radial-gradient(640px 380px at 100% 100%, rgba(196, 98, 45, 0.32), transparent 50%),
     #141311;
+}
+
+/* Invoice printing: the invoice is portalled to the end of the page body as
+   .invoice-print-root. Hidden on screen; while printing it is the only thing shown. */
+.invoice-print-root { display: none; }
+@media print {
+  body.printing-invoice > *:not(.invoice-print-root) { display: none !important; }
+  body.printing-invoice > .invoice-print-root { display: block; }
+  body.printing-invoice { background: #fff; }
+  .invoice-print-root .invoice-sheet { box-shadow: none; }
+  .invoice-print-root tr { break-inside: avoid; }
 }

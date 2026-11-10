@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
-import { round2, salesTotals, slugify } from "./format";
+import { roundMoney, salesTotals, slugify } from "./format";
+import { clearUserCache } from "./auth/user";
 import { asNumber, asString, HttpError, optionalDate } from "./http";
 import { prisma } from "./prisma";
 import { applyStockChange, type Tx } from "./stock";
@@ -13,7 +14,8 @@ const poInclude = {
 const soInclude = {
   customer: true,
   warehouse: true,
-  items: { include: { product: { select: { id: true, name: true, sku: true } } } },
+  // Oldest first: an open invoice reads as a dated log of what was taken.
+  items: { orderBy: { createdAt: "asc" }, include: { product: { select: { id: true, name: true, sku: true } } } },
 } satisfies Prisma.SalesOrderInclude;
 
 const trInclude = {
@@ -78,8 +80,8 @@ function productData(input: Record<string, unknown>, partial = false) {
     categoryId,
     supplierId: asString(input.supplierId) || null,
     uom: asString(input.uom) || "pcs",
-    costPrice: round2(Math.max(0, asNumber(input.costPrice))),
-    sellingPrice: round2(Math.max(0, asNumber(input.sellingPrice))),
+    costPrice: roundMoney(Math.max(0, asNumber(input.costPrice))),
+    sellingPrice: roundMoney(Math.max(0, asNumber(input.sellingPrice))),
     discountPct,
     minStock,
     maxStock,
@@ -213,6 +215,68 @@ export async function deleteCustomer(id: string, userId: string) {
   return { ok: true };
 }
 
+export async function setCustomerPrice(customerId: string, input: Record<string, unknown>, userId: string) {
+  const productId = asString(input.productId);
+  if (!productId) throw new HttpError(400, "Choose a product.");
+  const [customer, product] = await Promise.all([
+    prisma.customer.findUnique({ where: { id: customerId }, select: { name: true } }),
+    prisma.product.findUnique({ where: { id: productId }, select: { name: true } }),
+  ]);
+  if (!customer) throw new HttpError(404, "Customer not found.");
+  if (!product) throw new HttpError(404, "Product not found.");
+  const where = { customerId_productId: { customerId, productId } };
+  if (input.price === null || input.price === undefined || input.price === "") {
+    await prisma.customerPrice.deleteMany({ where: { customerId, productId } });
+    await prisma.auditLog.create({
+      data: { userId, action: "DELETE", resourceType: "CUSTOMER", resourceId: customerId, description: `Removed ${customer.name}'s price for ${product.name}` },
+    });
+    return { ok: true };
+  }
+  const price = roundMoney(asNumber(input.price));
+  if (!Number.isFinite(price) || price < 0) throw new HttpError(400, "Price cannot be negative.");
+  const saved = await prisma.customerPrice.upsert({
+    where,
+    create: { customerId, productId, price },
+    update: { price },
+  });
+  await prisma.auditLog.create({
+    data: { userId, action: "UPDATE", resourceType: "CUSTOMER", resourceId: customerId, description: `Set ${customer.name}'s price for ${product.name}` },
+  });
+  return saved;
+}
+
+/** Save a whole price list at once: [{ productId, price }], price null/"" removes it. */
+export async function setCustomerPrices(customerId: string, raw: unknown, userId: string) {
+  if (!Array.isArray(raw)) throw new HttpError(400, "Send a list of prices.");
+  const customer = await prisma.customer.findUnique({ where: { id: customerId }, select: { name: true } });
+  if (!customer) throw new HttpError(404, "Customer not found.");
+  const entries = (raw as Record<string, unknown>[]).map((row) => {
+    const productId = asString(row.productId);
+    if (!productId) throw new HttpError(400, "Each price needs a product.");
+    if (row.price === null || row.price === undefined || row.price === "") return { productId, price: null };
+    const price = roundMoney(asNumber(row.price));
+    if (!Number.isFinite(price) || price < 0) throw new HttpError(400, "Price cannot be negative.");
+    return { productId, price };
+  });
+  const removed = entries.filter((entry) => entry.price === null).map((entry) => entry.productId);
+  const kept = entries.filter((entry): entry is { productId: string; price: number } => entry.price !== null);
+  // One batch: a single round trip instead of one per product.
+  await prisma.$transaction([
+    prisma.customerPrice.deleteMany({ where: { customerId, productId: { in: removed } } }),
+    ...kept.map((entry) =>
+      prisma.customerPrice.upsert({
+        where: { customerId_productId: { customerId, productId: entry.productId } },
+        create: { customerId, productId: entry.productId, price: entry.price },
+        update: { price: entry.price },
+      }),
+    ),
+    prisma.auditLog.create({
+      data: { userId, action: "UPDATE", resourceType: "CUSTOMER", resourceId: customerId, description: `Updated ${customer.name}'s price list (${kept.length} set, ${removed.length} removed)` },
+    }),
+  ]);
+  return { ok: true, saved: kept.length, removed: removed.length };
+}
+
 export async function createSupplier(input: Record<string, unknown>, userId: string) {
   const supplier = await prisma.supplier.create({ data: partyData(input) });
   await prisma.auditLog.create({
@@ -272,6 +336,7 @@ export async function createUser(input: Record<string, unknown>, actorId: string
   await prisma.auditLog.create({
     data: { userId: actorId, action: "CREATE", resourceType: "USER", resourceId: user.id, description: `Created user ${user.email}` },
   });
+  clearUserCache();
   const { password: _password, ...safe } = user;
   return safe;
 }
@@ -306,6 +371,7 @@ export async function updateUser(id: string, input: Record<string, unknown>, act
   await prisma.auditLog.create({
     data: { userId: actorId, action: "UPDATE", resourceType: "USER", resourceId: id, description: `Updated user ${user.email}` },
   });
+  clearUserCache();
   const { password: _password, ...safe } = user;
   return safe;
 }
@@ -367,8 +433,8 @@ function parseLines(raw: unknown, priceKey: "unitCost" | "unitPrice" | "requeste
     const price = asNumber(record[priceKey] ?? record.price);
     if (price < 0) throw new HttpError(400, "Price cannot be negative.");
     return priceKey === "unitCost"
-      ? { productId, quantity, unitCost: round2(price), receivedQty: 0 }
-      : { productId, quantity, unitPrice: round2(price) };
+      ? { productId, quantity, unitCost: roundMoney(price), receivedQty: 0 }
+      : { productId, quantity, unitPrice: roundMoney(price) };
   });
 }
 
@@ -379,7 +445,7 @@ export async function createPurchaseOrder(input: Record<string, unknown>, userId
   const status = asString(input.status) || "DRAFT";
   if (!["DRAFT", "SUBMITTED"].includes(status)) throw new HttpError(400, "Invalid status.");
   const items = parseLines(input.items, "unitCost") as { productId: string; quantity: number; unitCost: number; receivedQty: number }[];
-  const total = round2(items.reduce((sum, item) => sum + item.quantity * item.unitCost, 0));
+  const total = roundMoney(items.reduce((sum, item) => sum + item.quantity * item.unitCost, 0));
   return prisma.$transaction(async (tx) => {
     const orderNumber = await nextNumber(tx, "PO");
     const order = await tx.purchaseOrder.create({
@@ -465,19 +531,23 @@ export async function transitionPurchaseOrder(
   });
 }
 
-async function applySaleStock(tx: Tx, orderId: string, userId: string, direction: "deduct" | "restore") {
+async function applySaleStock(tx: Tx, orderId: string, userId: string, direction: "deduct" | "restore", at?: Date) {
   const order = await tx.salesOrder.findUnique({ where: { id: orderId }, include: { items: true } });
   if (!order) throw new HttpError(404, "Sales order not found.");
   for (const item of order.items) {
+    // Returned goods are already back on the shelf, so only the outstanding quantity moves.
+    const outstanding = item.quantity - item.returnedQty;
+    if (outstanding <= 0) continue;
     await applyStockChange(tx, {
       productId: item.productId,
       warehouseId: order.warehouseId,
-      delta: direction === "deduct" ? -item.quantity : item.quantity,
+      delta: direction === "deduct" ? -outstanding : outstanding,
       type: direction === "deduct" ? "SALE" : "SALE_REVERSAL",
       notes: order.orderNumber,
       userId,
       referenceType: "SALES_ORDER",
       referenceId: order.id,
+      at,
     });
   }
 }
@@ -487,19 +557,43 @@ export async function createSalesOrder(input: Record<string, unknown>, userId: s
   if (!warehouseId) throw new HttpError(400, "Choose a warehouse.");
   const status = asString(input.status) || "DRAFT";
   if (!["DRAFT", "CONFIRMED"].includes(status)) throw new HttpError(400, "Invalid status.");
+  const kind = asString(input.kind) || "SALE";
+  if (!["SALE", "CONSIGN"].includes(kind)) throw new HttpError(400, "Invalid order type.");
   const items = parseLines(input.items, "unitPrice") as { productId: string; quantity: number; unitPrice: number }[];
+  const customerId = asString(input.customerId) || null;
+  if (kind === "CONSIGN") {
+    if (!customerId) throw new HttpError(400, "Choose a customer for take & return.");
+    // Each customer has one open invoice: new products are added to it, not to a new order.
+    const open = await prisma.salesOrder.findFirst({
+      where: { customerId, kind: "CONSIGN", status: { in: OPEN_CONSIGN } },
+      orderBy: { orderDate: "desc" },
+    });
+    if (open) {
+      if (open.warehouseId !== warehouseId) {
+        throw new HttpError(400, "This customer's open invoice is from another warehouse. Choose that warehouse or settle the invoice first.");
+      }
+      return prisma.$transaction(async (tx) => {
+        await addConsignItems(tx, open, items, userId, eventTime(input.at));
+        const order = await tx.salesOrder.findUniqueOrThrow({ where: { id: open.id }, include: soInclude });
+        return { ...order, appended: true };
+      });
+    }
+  }
   const discount = Math.max(0, asNumber(input.discount));
   const taxPct = Math.max(0, asNumber(input.taxPct));
   const totals = salesTotals(items, discount, taxPct);
+  // Take & return: the time the customer took the goods (defaults to now).
+  const at = kind === "CONSIGN" ? eventTime(input.at) : undefined;
   return prisma.$transaction(async (tx) => {
     const orderNumber = await nextNumber(tx, "SO");
     const created = await tx.salesOrder.create({
       data: {
         orderNumber,
-        customerId: asString(input.customerId) || null,
+        customerId,
         warehouseId,
         deliveryDate: optionalDate(input.deliveryDate),
         status: "DRAFT",
+        kind,
         notes: asString(input.notes) || null,
         discount,
         taxPct,
@@ -507,11 +601,12 @@ export async function createSalesOrder(input: Record<string, unknown>, userId: s
         total: totals.total,
         stockApplied: false,
         createdById: userId,
-        items: { create: items },
+        ...(at ? { orderDate: at } : {}),
+        items: { create: items.map((item) => (at ? { ...item, createdAt: at } : item)) },
       },
     });
     if (status === "CONFIRMED") {
-      await applySaleStock(tx, created.id, userId, "deduct");
+      await applySaleStock(tx, created.id, userId, "deduct", at);
       const confirmed = await tx.salesOrder.update({
         where: { id: created.id },
         data: { status: "CONFIRMED", stockApplied: true },
@@ -526,10 +621,169 @@ export async function createSalesOrder(input: Record<string, unknown>, userId: s
   });
 }
 
-export async function transitionSalesOrder(id: string, action: string, userId: string) {
+// Recompute totals from what the customer actually kept (taken − returned).
+async function refreshSalesTotals(tx: Tx, id: string) {
+  const order = await tx.salesOrder.findUniqueOrThrow({ where: { id }, include: { items: true } });
+  const totals = salesTotals(
+    order.items.map((item) => ({ quantity: item.quantity - item.returnedQty, unitPrice: item.unitPrice })),
+    order.discount,
+    order.taxPct,
+  );
+  await tx.salesOrder.update({ where: { id }, data: totals });
+}
+
+const OPEN_CONSIGN = ["CONFIRMED", "PROCESSING"];
+
+// Customer comes back and takes more goods on the same take-and-return order.
+/**
+ * When a take or return happened: the time the user entered, or now. Lets staff
+ * record something later ("she brought it back at 9 this morning").
+ */
+function eventTime(value: unknown) {
+  const at = optionalDate(value);
+  if (!at) return new Date();
+  if (at.getTime() > Date.now() + 5 * 60_000) throw new HttpError(400, "The time cannot be in the future.");
+  return at;
+}
+
+export async function addConsignItems(
+  tx: Tx,
+  order: { id: string; orderNumber: string; warehouseId: string },
+  raw: unknown,
+  userId: string,
+  at: Date = new Date(),
+) {
+  const lines = parseLines(raw, "unitPrice") as { productId: string; quantity: number; unitPrice: number }[];
+  for (const line of lines) {
+    await tx.salesOrderItem.create({ data: { ...line, orderId: order.id, createdAt: at } });
+    await applyStockChange(tx, {
+      productId: line.productId,
+      warehouseId: order.warehouseId,
+      delta: -line.quantity,
+      type: "SALE",
+      notes: `${order.orderNumber} (added)`,
+      userId,
+      referenceType: "SALES_ORDER",
+      referenceId: order.id,
+      at,
+    });
+  }
+  await refreshSalesTotals(tx, order.id);
+  await audit(tx, userId, "UPDATE", "SALES_ORDER", order.id, `Added ${lines.length} line(s) to ${order.orderNumber}`);
+}
+
+// Record how many of each line came back. Values are the total returned so far, not an increment.
+export async function recordConsignReturns(
+  tx: Tx,
+  order: { id: string; orderNumber: string; warehouseId: string },
+  raw: unknown,
+  userId: string,
+  at: Date = new Date(),
+) {
+  if (!raw || typeof raw !== "object") throw new HttpError(400, "Enter the returned quantities.");
+  const items = await tx.salesOrderItem.findMany({ where: { orderId: order.id } });
+  for (const item of items) {
+    const value = (raw as Record<string, unknown>)[item.id];
+    if (value === undefined || value === null || value === "") continue;
+    const returned = asNumber(value);
+    if (!Number.isFinite(returned) || returned < 0 || returned > item.quantity) {
+      throw new HttpError(400, `Returned quantity must be between 0 and ${item.quantity}.`);
+    }
+    const delta = returned - item.returnedQty;
+    if (Math.abs(delta) < 0.0001) continue;
+    await applyStockChange(tx, {
+      productId: item.productId,
+      warehouseId: order.warehouseId,
+      delta,
+      type: "SALE_RETURN",
+      notes: order.orderNumber,
+      userId,
+      referenceType: "SALES_ORDER",
+      referenceId: order.id,
+      at,
+    });
+    await tx.salesOrderItem.update({ where: { id: item.id }, data: { returnedQty: returned } });
+  }
+  await refreshSalesTotals(tx, order.id);
+  await audit(tx, userId, "UPDATE", "SALES_ORDER", order.id, `Recorded returns on ${order.orderNumber}`);
+}
+
+// Fix an order's lines (wrong product, quantity or price). If the order already
+// took stock out, only the difference per product moves, so stock stays right.
+export async function editSalesItems(
+  tx: Tx,
+  order: { id: string; orderNumber: string; warehouseId: string; stockApplied: boolean },
+  input: Record<string, unknown>,
+  userId: string,
+) {
+  const raw = Array.isArray(input.items) ? (input.items as Record<string, unknown>[]) : [];
+  const lines = parseLines(raw, "unitPrice") as { productId: string; quantity: number; unitPrice: number }[];
+  const old = await tx.salesOrderItem.findMany({ where: { orderId: order.id } });
+  const oldById = new Map(old.map((item) => [item.id, item]));
+
+  // Keep returns already recorded on lines that stay (matched by line id).
+  const next = lines.map((line, index) => {
+    const prev = oldById.get(asString(raw[index]?.id));
+    const returnedQty = prev && prev.productId === line.productId ? prev.returnedQty : 0;
+    if (returnedQty > line.quantity) {
+      throw new HttpError(400, `Quantity cannot be less than the ${returnedQty} already returned.`);
+    }
+    // Keep the day each product was taken; new lines are dated now.
+    return { ...line, returnedQty, createdAt: prev && prev.productId === line.productId ? prev.createdAt : new Date() };
+  });
+
+  if (order.stockApplied) {
+    const outstanding = (items: { productId: string; quantity: number; returnedQty: number }[]) => {
+      const map = new Map<string, number>();
+      for (const item of items) map.set(item.productId, (map.get(item.productId) || 0) + item.quantity - item.returnedQty);
+      return map;
+    };
+    const before = outstanding(old);
+    const after = outstanding(next);
+    // Put stock back first, then take, so swapping products never fails on a false shortage.
+    const changes = [...new Set([...before.keys(), ...after.keys()])]
+      .map((productId) => ({ productId, delta: (before.get(productId) || 0) - (after.get(productId) || 0) }))
+      .filter((change) => Math.abs(change.delta) > 0.0001)
+      .sort((a, b) => b.delta - a.delta);
+    for (const change of changes) {
+      await applyStockChange(tx, {
+        productId: change.productId,
+        warehouseId: order.warehouseId,
+        delta: change.delta,
+        type: change.delta > 0 ? "SALE_REVERSAL" : "SALE",
+        notes: `${order.orderNumber} (edited)`,
+        userId,
+        referenceType: "SALES_ORDER",
+        referenceId: order.id,
+      });
+    }
+  }
+
+  await tx.salesOrderItem.deleteMany({ where: { orderId: order.id } });
+  await tx.salesOrderItem.createMany({ data: next.map((line) => ({ ...line, orderId: order.id })) });
+  if (input.discount !== undefined) {
+    await tx.salesOrder.update({ where: { id: order.id }, data: { discount: Math.max(0, asNumber(input.discount)) } });
+  }
+  await refreshSalesTotals(tx, order.id);
+  await audit(tx, userId, "UPDATE", "SALES_ORDER", order.id, `Edited lines on ${order.orderNumber}`);
+}
+
+export async function transitionSalesOrder(id: string, action: string, userId: string, body: Record<string, unknown> = {}) {
   return prisma.$transaction(async (tx) => {
     const order = await tx.salesOrder.findUnique({ where: { id } });
     if (!order) throw new HttpError(404, "Sales order not found.");
+    if (action === "EDIT_ITEMS") {
+      if (order.status === "CANCELLED") throw new HttpError(400, "A cancelled order cannot be edited.");
+      await editSalesItems(tx, order, body, userId);
+      return tx.salesOrder.findUniqueOrThrow({ where: { id }, include: soInclude });
+    }
+    if (action === "ADD_ITEMS" || action === "RETURN") {
+      if (order.kind !== "CONSIGN") throw new HttpError(400, "Only take-and-return orders support this.");
+      if (!OPEN_CONSIGN.includes(order.status)) throw new HttpError(400, "Confirm the order first; paid or cancelled orders cannot change.");
+      if (action === "ADD_ITEMS") await addConsignItems(tx, order, body.items, userId, eventTime(body.at));
+      else await recordConsignReturns(tx, order, body.returns, userId, eventTime(body.at));
+      return tx.salesOrder.findUniqueOrThrow({ where: { id }, include: soInclude });
+    }
     const setStatus = async (status: string, extra: Record<string, unknown> = {}) => {
       const updated = await tx.salesOrder.update({ where: { id }, data: { status, ...extra }, include: soInclude });
       await audit(tx, userId, "STATUS_CHANGE", "SALES_ORDER", id, `${order.orderNumber} → ${status}`);

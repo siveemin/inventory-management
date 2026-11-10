@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
-import { Fraunces, Noto_Sans_Khmer, Outfit } from "next/font/google";
+import { Battambang, Fraunces, Outfit } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces" });
-const khmer = Noto_Sans_Khmer({
+// Khmer OS Battambang: use the locally installed font when present, otherwise
+// Google's "Battambang" (same design) so every visitor sees the same face.
+const khmer = Battambang({
   subsets: ["khmer"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-khmer",
+  weight: ["400", "700"],
+  variable: "--font-khmer-web",
 });
 
 export const metadata: Metadata = {

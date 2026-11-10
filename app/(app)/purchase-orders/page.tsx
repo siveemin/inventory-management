@@ -52,7 +52,7 @@ export default function PurchaseOrdersPage() {
                   <Td>{money.date(order.orderDate)}</Td>
                   <Td>{money.date(order.expectedDelivery)}</Td>
                   <Td><StatusBadge status={order.status} label={t(`status.${order.status}`)} /></Td>
-                  <Td className="tabular-nums">{money.usd(order.total)}</Td>
+                  <Td className="tabular-nums">{money.amount(order.total)}</Td>
                 </tr>
               ))}
             </tbody>

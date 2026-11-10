@@ -13,6 +13,8 @@ export const config = {
     "/sales-orders/:path*",
     "/stock-transfers/:path*",
     "/customers/:path*",
+    "/invoices/:path*",
+    "/price-lists/:path*",
     "/suppliers/:path*",
     "/users/:path*",
     "/reports/:path*",

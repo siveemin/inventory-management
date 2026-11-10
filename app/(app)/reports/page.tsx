@@ -69,7 +69,7 @@ export default function ReportsPage() {
             <>
               <select value={type} onChange={(event) => setType(event.target.value)} className="w-full min-w-0 rounded-xl border border-line bg-white px-3 py-2 text-sm sm:w-auto">
                 <option value="">{t("label.type")}</option>
-                {["STOCK_IN", "STOCK_OUT", "ADJUSTMENT", "SALE", "PURCHASE_RECEIVE", "TRANSFER_IN", "TRANSFER_OUT", "SALE_REVERSAL"].map((item) => <option key={item} value={item}>{t(`status.${item}`)}</option>)}
+                {["STOCK_IN", "STOCK_OUT", "ADJUSTMENT", "SALE", "PURCHASE_RECEIVE", "TRANSFER_IN", "TRANSFER_OUT", "SALE_REVERSAL", "SALE_RETURN"].map((item) => <option key={item} value={item}>{t(`status.${item}`)}</option>)}
               </select>
               <select value={warehouseId} onChange={(event) => setWarehouseId(event.target.value)} className="w-full min-w-0 rounded-xl border border-line bg-white px-3 py-2 text-sm sm:w-auto">
                 <option value="">{t("label.warehouse")}</option>
@@ -83,9 +83,9 @@ export default function ReportsPage() {
       {report.loading || !report.data ? <LoadingBlock /> : report.data.tab === "sales" ? (
         <div className="grid gap-4">
           <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
-            <Stat label={t("report.revenue")} value={money.usd(report.data.revenue)} />
+            <Stat label={t("report.revenue")} value={money.amount(report.data.revenue)} />
             <Stat label={t("report.orders")} value={String(report.data.orders)} />
-            <Stat label={t("report.avg")} value={money.usd(report.data.average)} />
+            <Stat label={t("report.avg")} value={money.amount(report.data.average)} />
           </div>
           <Card className="p-5"><SalesLine data={report.data.series} /></Card>
         </div>
@@ -93,7 +93,7 @@ export default function ReportsPage() {
         <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
           <div className="grid gap-4">
             <Stat label={t("report.skus")} value={String(report.data.skus)} />
-            <Stat label={t("report.value")} value={money.usd(report.data.value)} />
+            <Stat label={t("report.value")} value={money.amount(report.data.value)} />
             <Stat label={t("report.low")} value={String(report.data.lowStock)} />
           </div>
           <Card className="p-5"><ValuePie data={report.data.categories} /></Card>

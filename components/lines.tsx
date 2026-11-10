@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { sellingUnit } from "@/lib/format";
+import { useI18n } from "@/lib/settings";
 import type { MetaProduct } from "@/lib/types";
+import { MoneyInput } from "./money-input";
 import { Button, inputClass } from "./ui";
 
 export type DraftLine = { key: string; productId: string; quantity: string; price: string };
@@ -26,6 +28,7 @@ export function LineEditor({
   priceOf?: (product: MetaProduct) => number;
   priceLabel?: string;
 }) {
+  const { t } = useI18n();
   function update(key: string, patch: Partial<DraftLine>) {
     onChange(lines.map((line) => (line.key === key ? { ...line, ...patch } : line)));
   }
@@ -40,17 +43,18 @@ export function LineEditor({
           />
           <input className={inputClass} type="number" min="1" step="1" value={line.quantity} onChange={(event) => update(line.key, { quantity: event.target.value })} />
           {showPrice ? (
-            <input className={inputClass} type="number" min="0" step="0.01" value={line.price} aria-label={priceLabel} onChange={(event) => update(line.key, { price: event.target.value })} />
+            <MoneyInput value={line.price} aria-label={priceLabel} onChange={(usd) => update(line.key, { price: usd })} />
           ) : <span />}
-          <Button variant="ghost" onClick={() => onChange(lines.filter((item) => item.key !== line.key))}>Remove</Button>
+          <Button variant="ghost" onClick={() => onChange(lines.filter((item) => item.key !== line.key))}>{t("lines.remove")}</Button>
         </div>
       ))}
-      <Button variant="outline" onClick={() => onChange([...lines, blankLine()])}>Add line</Button>
+      <Button variant="outline" onClick={() => onChange([...lines, blankLine()])}>{t("lines.add")}</Button>
     </div>
   );
 }
 
 function ProductPick({ products, value, onSelect }: { products: MetaProduct[]; value: string; onSelect: (product: MetaProduct) => void }) {
+  const { t } = useI18n();
   const selected = products.find((product) => product.id === value);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -64,7 +68,7 @@ function ProductPick({ products, value, onSelect }: { products: MetaProduct[]; v
     <div className="relative">
       <input
         className={inputClass}
-        placeholder="Search product"
+        placeholder={t("lines.search")}
         value={open ? query : selected ? `${selected.name} · ${selected.sku}` : ""}
         onFocus={() => { setOpen(true); setQuery(""); }}
         onChange={(event) => { setQuery(event.target.value); setOpen(true); }}
@@ -72,7 +76,7 @@ function ProductPick({ products, value, onSelect }: { products: MetaProduct[]; v
       />
       {open ? (
         <div className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-xl border border-line bg-white shadow-lg">
-          {matches.length === 0 ? <p className="px-3 py-2 text-sm text-ink-soft">No products</p> : matches.map((product) => (
+          {matches.length === 0 ? <p className="px-3 py-2 text-sm text-ink-soft">{t("lines.none")}</p> : matches.map((product) => (
             <button
               type="button"
               key={product.id}

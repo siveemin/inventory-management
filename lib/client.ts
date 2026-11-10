@@ -35,6 +35,15 @@ export function useHydrated() {
   return useSyncExternalStore(noSubscribe, () => true, () => false);
 }
 
+// Last good response per GET path. Revisiting a page shows this instantly while
+// a fresh copy loads in the background, so switching tabs doesn't wait on the network.
+const responseCache = new Map<string, unknown>();
+
+/** Forget cached responses, e.g. on logout so the next user never sees them. */
+export function clearApiCache() {
+  responseCache.clear();
+}
+
 export function useApi<T>(path: string | null) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +57,7 @@ export function useApi<T>(path: string | null) {
     let cancel = false;
     api<T>(path)
       .then((next) => {
+        responseCache.set(path, next);
         if (!cancel) {
           setData(next);
           setError(null);
@@ -64,6 +74,8 @@ export function useApi<T>(path: string | null) {
     };
   }, [path, request]);
 
-  const loading = request !== null && settled !== request;
-  return { data, loading, error, reload, setData };
+  const fresh = request !== null && settled === request;
+  const cached = path ? (responseCache.get(path) as T | undefined) : undefined;
+  const loading = request !== null && !fresh && cached === undefined;
+  return { data: fresh ? data : (cached ?? data), loading, error, reload, setData };
 }

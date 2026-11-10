@@ -23,6 +23,7 @@ import {
   UserCog,
   Users,
   Warehouse,
+  ReceiptText,
   X,
 } from "lucide-react";
 import { useAuth } from "@/components/providers";
@@ -46,6 +47,7 @@ const groups = [
     label: "nav.operations",
     items: [
       { href: "/purchase-orders", label: "nav.purchase", icon: ClipboardList },
+      { href: "/invoices", label: "nav.invoices", icon: ReceiptText },
       { href: "/sales-orders", label: "nav.sales", icon: ClipboardList },
       { href: "/stock-transfers", label: "nav.transfers", icon: ArrowLeftRight },
       { href: "/scanner", label: "nav.scanner", icon: ScanBarcode },
@@ -55,6 +57,7 @@ const groups = [
     label: "nav.people",
     items: [
       { href: "/customers", label: "nav.customers", icon: Users },
+      { href: "/price-lists", label: "nav.priceLists", icon: Tags },
       { href: "/suppliers", label: "nav.suppliers", icon: Truck },
       { href: "/users", label: "nav.users", icon: UserCog },
     ],

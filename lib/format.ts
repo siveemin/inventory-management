@@ -4,6 +4,16 @@ export function round2(n: number) {
   return Math.round((n || 0) * 100) / 100;
 }
 
+/**
+ * Money is stored in USD. Prices typed in riel (e.g. 1,500 ៛ at 4,000/$ = $0.375)
+ * need more than cents, or they come back as 1,520 ៛. Six decimals keeps riel exact.
+ */
+export function roundMoney(n: number) {
+  return Math.round((n || 0) * 1e6) / 1e6;
+}
+
+export type Currency = "KHR" | "USD";
+
 export function formatUsd(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n || 0);
 }
@@ -20,11 +30,11 @@ export function salesTotals(lines: { quantity: number; unitPrice: number }[], di
   const subtotal = lines.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0);
   const base = Math.max(0, subtotal - discount);
   const total = base * (1 + taxPct / 100);
-  return { subtotal: round2(subtotal), total: round2(total) };
+  return { subtotal: roundMoney(subtotal), total: roundMoney(total) };
 }
 
 export function sellingUnit(price: number, discountPct: number) {
-  return round2(price * (1 - (discountPct || 0) / 100));
+  return roundMoney(price * (1 - (discountPct || 0) / 100));
 }
 
 export function toDateInput(date = new Date()) {
@@ -118,4 +128,5 @@ export const statusTone: Record<string, "green" | "yellow" | "red" | "gray" | "b
   TRANSFER_IN: "green",
   TRANSFER_OUT: "yellow",
   SALE_REVERSAL: "gray",
+  SALE_RETURN: "green",
 };

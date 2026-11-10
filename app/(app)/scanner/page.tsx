@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
+import { useCustomerPrices } from "@/components/customer-prices";
+import { QuickCustomerButton } from "@/components/quick-customer";
 import { KhmerInvoice, toInvoice } from "@/components/invoice";
+import { MoneyInput } from "@/components/money-input";
 import { useAuth, useToast } from "@/components/providers";
 import { BarcodeCameraScanner, HardwareScanListener, QtyStepper } from "@/components/scanner";
 import { Button, Card, Field, Modal, PageHeader, Select, TextArea, TextInput } from "@/components/ui";
@@ -29,6 +32,7 @@ export default function ScannerPage() {
   const [discount, setDiscount] = useState("0");
   const [checkout, setCheckout] = useState(false);
   const [customerId, setCustomerId] = useState("");
+  const { priceFor } = useCustomerPrices(customerId);
   const [pickedWarehouseId, setWarehouseId] = useState("");
   const [invoice, setInvoice] = useState<SalesOrder | null>(null);
   const [action, setAction] = useState<"STOCK_IN" | "STOCK_OUT" | "TRANSFER" | null>(null);
@@ -74,7 +78,7 @@ export default function ScannerPage() {
   }
 
   const totals = salesTotals(
-    cart.map((line) => ({ quantity: line.quantity, unitPrice: sellingUnit(line.product.sellingPrice, line.product.discountPct) })),
+    cart.map((line) => ({ quantity: line.quantity, unitPrice: priceFor(line.product) })),
     Number(discount) || 0,
     0,
   );
@@ -94,7 +98,7 @@ export default function ScannerPage() {
           items: cart.map((line) => ({
             productId: line.product.id,
             quantity: line.quantity,
-            unitPrice: sellingUnit(line.product.sellingPrice, line.product.discountPct),
+            unitPrice: priceFor(line.product),
           })),
         }),
       });
@@ -179,15 +183,15 @@ export default function ScannerPage() {
             {cart.length === 0 ? <p className="mt-4 text-sm text-ink-soft">{t("scanner.empty")}</p> : (
               <div className="mt-4 grid gap-3">
                 {cart.map((line) => {
-                  const price = sellingUnit(line.product.sellingPrice, line.product.discountPct);
+                  const price = priceFor(line.product);
                   return (
                     <div key={line.product.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
                       <div>
                         <p className="font-medium">{line.product.name}</p>
-                        <p className="text-xs text-ink-soft">{money.usd(price)}</p>
+                        <p className="text-xs text-ink-soft">{money.amount(price)}</p>
                       </div>
                       <QtyStepper value={line.quantity} onChange={(quantity) => setCart((current) => current.map((item) => item.product.id === line.product.id ? { ...item, quantity } : item))} />
-                      <p className="tabular-nums">{money.usd(price * line.quantity)}</p>
+                      <p className="tabular-nums">{money.amount(price * line.quantity)}</p>
                       <Button variant="ghost" onClick={() => setCart((current) => current.filter((item) => item.product.id !== line.product.id))}>✕</Button>
                     </div>
                   );
@@ -195,12 +199,12 @@ export default function ScannerPage() {
               </div>
             )}
             <div className="mt-4 grid gap-2">
-              <Field label={t("label.discount")}><TextInput type="number" min="0" step="0.01" value={discount} onChange={(event) => setDiscount(event.target.value)} /></Field>
+              <Field label={t("label.discount")}><MoneyInput value={discount} onChange={setDiscount} /></Field>
               <div className="flex items-end justify-between">
                 <div>
-                  <p className="text-sm text-ink-soft">{t("label.subtotal")} {money.usd(totals.subtotal)}</p>
-                  <p className="font-serif text-3xl">{money.usd(totals.total)}</p>
-                  <p className="text-sm">{money.khr(totals.total)}</p>
+                  <p className="text-sm text-ink-soft">{t("label.subtotal")} {money.amount(totals.subtotal)}</p>
+                  <p className="font-serif text-3xl">{money.amount(totals.total)}</p>
+                  <p className="text-sm">{money.other(totals.total)}</p>
                 </div>
                 <Button disabled={!cart.length} onClick={() => setCheckout(true)}>{t("action.checkout")}</Button>
               </div>
@@ -221,9 +225,10 @@ export default function ScannerPage() {
               <option value="">{t("label.walkIn")}</option>
               {meta.data?.customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name}</option>)}
             </Select>
+            <QuickCustomerButton onCreated={(id) => { meta.reload(); setCustomerId(id); }} />
           </Field>
           <p className="text-sm text-ink-soft">1 USD = {money.rate.toLocaleString("en-US")} KHR</p>
-          <p className="font-serif text-3xl">{money.usd(totals.total)} · {money.khr(totals.total)}</p>
+          <p className="font-serif text-3xl">{money.amount(totals.total)} · {money.other(totals.total)}</p>
           <Button disabled={busy} onClick={confirmSale}>{t("action.confirm")}</Button>
         </div>
       </Modal>
@@ -272,8 +277,8 @@ function LookupCard({ product, onAction }: { product: Product; onAction: (action
         <div>
           <p className="font-serif text-3xl">{product.name}</p>
           <p className="text-sm text-ink-soft">{product.sku} · {product.category?.name}</p>
-          <p className="mt-2">{t("label.cost")} {money.usd(product.costPrice)}</p>
-          <p>{t("label.selling")} {money.usd(price)} · {money.khr(price)}</p>
+          <p className="mt-2">{t("label.cost")} {money.amount(product.costPrice)}</p>
+          <p>{t("label.selling")} {money.amount(price)} · {money.other(price)}</p>
         </div>
       </div>
       {product.description ? <p className="mt-4 text-sm text-ink-soft">{product.description}</p> : null}

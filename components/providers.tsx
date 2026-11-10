@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { authClient } from "@/lib/auth/client";
-import { api, UNAUTHORIZED_EVENT } from "@/lib/client";
+import { api, clearApiCache, UNAUTHORIZED_EVENT } from "@/lib/client";
 import { SettingsProvider } from "@/lib/settings";
 import type { AuthUser } from "@/lib/types";
 
@@ -48,7 +48,10 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const onUnauthorized = () => setUser(null);
+    const onUnauthorized = () => {
+      clearApiCache();
+      setUser(null);
+    };
     window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
     return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
   }, []);
@@ -65,6 +68,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // The app shell sends a signed-out user to /login.
   const logout = useCallback(() => {
+    clearApiCache();
     void authClient.signOut().finally(() => setUser(null));
   }, []);
 

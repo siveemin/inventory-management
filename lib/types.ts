@@ -18,6 +18,8 @@ export type Category = {
 
 export type Party = {
   id: string;
+  /** Customers only: their open (unpaid) take & return invoice. */
+  openInvoice?: { id: string; total: number } | null;
   name: string;
   contactPerson?: string | null;
   email?: string | null;
@@ -140,6 +142,8 @@ export type SalesItem = {
   productId: string;
   quantity: number;
   unitPrice: number;
+  returnedQty: number;
+  createdAt?: string;
   product?: { id: string; name: string; sku: string };
 };
 
@@ -151,6 +155,7 @@ export type SalesOrder = {
   orderDate: string;
   deliveryDate?: string | null;
   status: string;
+  kind: "SALE" | "CONSIGN";
   notes?: string | null;
   discount: number;
   taxPct: number;
@@ -211,8 +216,12 @@ export type InvoiceData = {
   orderNumber: string;
   orderDate: string;
   customerName: string;
+  customerPhone?: string | null;
   warehouseName: string;
-  items: { name: string; sku?: string; quantity: number; unitPrice: number }[];
+  /** Take & return: show taken / returned / sold per line. */
+  consign?: boolean;
+  /** quantity = what is charged (sold); taken/returned only matter for take & return. */
+  items: { name: string; sku?: string; date?: string; taken: number; returned: number; quantity: number; unitPrice: number }[];
   discount: number;
   taxPct: number;
   subtotal: number;
