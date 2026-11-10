@@ -97,3 +97,43 @@ button, input, select, textarea { font: inherit; }
   .invoice-print-root .invoice-sheet { box-shadow: none; }
   .invoice-print-root tr { break-inside: avoid; }
 }
+
+/* Phones: each table row becomes a card. Labels come from the column headers
+   (copied to data-label by the Table component), so nothing hides off-screen. */
+@media (max-width: 639px) {
+  .rtable thead { display: none; }
+  .rtable tbody, .rtable tfoot { display: block; }
+  .rtable tbody tr, .rtable tfoot tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem 1rem;
+    padding: 0.875rem 1rem;
+  }
+  .rtable td { display: block; padding: 0 !important; min-width: 0; overflow-wrap: anywhere; }
+  .rtable td:empty { display: none; }
+  .rtable td[data-label]:not([data-label=""])::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.125rem;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  /* Card heading: the cell marked as title, else the first column. */
+  .rtable td[data-cell="title"],
+  .rtable tr:not(:has([data-cell="title"])) > td:first-child {
+    grid-column: 1 / -1;
+    order: -1;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .rtable td[data-cell="title"][data-label]::before,
+  .rtable tr:not(:has([data-cell="title"])) > td:first-child[data-label]::before { display: none; }
+  .rtable td[data-cell="media"] { display: none; }
+  /* Buttons and inputs get the full card width, easy to tap. */
+  .rtable td:has(button), .rtable td:has(input), .rtable td:has(select) { grid-column: 1 / -1; }
+  .rtable td:has(button) > div { flex-wrap: wrap; }
+  .rtable td[colspan] { grid-column: 1 / -1; }
+}

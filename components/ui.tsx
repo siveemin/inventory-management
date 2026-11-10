@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { statusTone } from "@/lib/format";
 
@@ -250,10 +250,33 @@ export function Switch({ checked, onChange, label }: { checked: boolean; onChang
   );
 }
 
+/**
+ * On phones each row turns into a small card: the header text becomes a label
+ * above each value (copied into data-label), so no column is hidden off-screen.
+ */
 export function Table({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLTableElement>(null);
+  useEffect(() => {
+    const table = ref.current;
+    if (!table) return;
+    const label = () => {
+      const heads = [...table.querySelectorAll("thead th")].map((th) => th.textContent?.trim() || "");
+      for (const row of table.querySelectorAll("tbody tr")) {
+        [...row.children].forEach((cell, index) => {
+          const text = heads[index] || "";
+          if (cell.getAttribute("data-label") !== text) cell.setAttribute("data-label", text);
+        });
+      }
+    };
+    label();
+    // Rows change with paging, searching and language: keep labels in step.
+    const watch = new MutationObserver(label);
+    watch.observe(table, { childList: true, subtree: true, characterData: true });
+    return () => watch.disconnect();
+  }, []);
   return (
-    <div className="max-w-full overflow-x-auto overscroll-x-contain">
-      <table className="w-full min-w-[40rem] border-collapse text-sm">{children}</table>
+    <div className="rtable max-w-full overflow-x-auto overscroll-x-contain">
+      <table ref={ref} className="w-full min-w-0 border-collapse text-sm sm:min-w-[40rem]">{children}</table>
     </div>
   );
 }
@@ -262,6 +285,10 @@ export function Th({ children, className }: { children?: React.ReactNode; classN
   return <th className={cx("px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-soft", className)}>{children}</th>;
 }
 
-export function Td({ children, className }: { children?: React.ReactNode; className?: string }) {
-  return <td className={cx("px-4 py-3 align-middle", className)}>{children}</td>;
+/**
+ * `cell` controls the phone card: "title" is the card heading (defaults to the
+ * first column), "media" (e.g. a thumbnail) is hidden on phones.
+ */
+export function Td({ children, className, cell, colSpan }: { children?: React.ReactNode; className?: string; cell?: "title" | "media"; colSpan?: number }) {
+  return <td data-cell={cell} colSpan={colSpan} className={cx("px-4 py-3 align-middle", className)}>{children}</td>;
 }

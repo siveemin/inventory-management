@@ -87,7 +87,24 @@ export function CustomerHistory({ customerId }: { customerId: string }) {
                   </button>
                   {open ? (
                     <div className="bg-[#fbf8f2] px-4 pb-4 sm:px-5">
-                      <div className="overflow-x-auto">
+                      <ul className="grid gap-2 pt-2 sm:hidden">
+                        {order.items.map((item) => {
+                          const sold = item.quantity - item.returnedQty;
+                          return (
+                            <li key={item.id} className="text-sm">
+                              <div className="flex justify-between gap-3">
+                                <span>{item.product?.name}</span>
+                                <span className="shrink-0 tabular-nums">{money.amount(sold * item.unitPrice)}</span>
+                              </div>
+                              <p className="text-xs text-ink-soft tabular-nums">
+                                {consign ? `${t("label.taken")} ${item.quantity} · ${t("label.returned")} ${item.returnedQty} · ` : ""}
+                                {t("label.sold")} {sold} × {money.amount(item.unitPrice)}
+                              </p>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <div className="hidden overflow-x-auto sm:block">
                         <table className="w-full min-w-[30rem] text-sm">
                           <thead>
                             <tr className="text-left text-[11px] uppercase tracking-[0.12em] text-ink-soft">

@@ -63,11 +63,15 @@ export function OrderActivity({ orderId, version = 0 }: { orderId: string; versi
       <ol className="grid gap-2">
         {rows.map((row) => (
           <li key={row.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-            <span className="w-32 shrink-0 tabular-nums text-ink-soft">{dateTime(row.createdAt)}</span>
+            <span className="shrink-0 tabular-nums text-ink-soft sm:w-32">{dateTime(row.createdAt)}</span>
             <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${tone(row)}`}>{label(row)}</span>
             <span className="font-semibold tabular-nums">{Math.abs(row.quantity)}</span>
-            <span className="min-w-0 flex-1">{row.product.name}</span>
-            {row.user ? <span className="text-xs text-ink-soft">{row.user.name}</span> : null}
+            {/* Phones: product and who recorded it go on their own line. */}
+            <span className="min-w-0 basis-full sm:flex-1 sm:basis-auto">
+              {row.product.name}
+              {row.user ? <span className="ml-2 text-xs text-ink-soft sm:hidden">· {row.user.name}</span> : null}
+            </span>
+            {row.user ? <span className="hidden text-xs text-ink-soft sm:inline">{row.user.name}</span> : null}
           </li>
         ))}
       </ol>

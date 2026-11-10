@@ -48,7 +48,7 @@ function Invoices() {
   return (
     <div>
       <PageHeader title={t("inv.title")} subtitle={t("inv.sub")} />
-      <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
         <Card className="h-fit">
           <div className="grid gap-2 p-3">
             <SearchBar value={search} onChange={setSearch} placeholder={t("inv.searchCustomer")} />
@@ -171,7 +171,7 @@ function CustomerInvoice({ customer, onChanged }: { customer: Party; onChanged: 
   const returned = invoice?.items.reduce((sum, item) => sum + item.returnedQty, 0) ?? 0;
 
   return (
-    <div ref={top} className="scroll-mt-20">
+    <div ref={top} className="min-w-0 scroll-mt-20">
     <Card>
       {/* Header: who, and what they owe */}
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line p-4 sm:p-5">
@@ -189,7 +189,30 @@ function CustomerInvoice({ customer, onChanged }: { customer: Party; onChanged: 
 
       {/* Lines already on the invoice */}
       {open && !invoice ? <LoadingBlock /> : invoice && invoice.items.length ? (
-        <div className="overflow-x-auto">
+        <>
+        {/* Phones: one compact row per line instead of a 7-column table. */}
+        <ul className="sm:hidden">
+          {invoice.items.map((item) => {
+            const sold = item.quantity - item.returnedQty;
+            return (
+              <li key={item.id} className="border-b border-line px-4 py-3 text-sm">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="font-medium">{item.product?.name}</span>
+                  <span className="shrink-0 font-semibold tabular-nums">{money.amount(sold * item.unitPrice)}</span>
+                </div>
+                <p className="mt-0.5 text-xs text-ink-soft">{money.dateTime(item.createdAt || invoice.orderDate)}</p>
+                <p className="mt-1 text-xs tabular-nums">
+                  {t("label.taken")} {item.quantity} · {t("label.returned")} {item.returnedQty} · <b>{t("label.sold")} {sold}</b> × {money.amount(item.unitPrice)}
+                </p>
+              </li>
+            );
+          })}
+          <li className="flex justify-between px-4 py-3 text-sm font-semibold">
+            <span>{t("label.total")} · {t("label.sold")} {taken - returned}</span>
+            <span className="tabular-nums">{money.amount(invoice.total)}</span>
+          </li>
+        </ul>
+        <div className="hidden overflow-x-auto sm:block">
           <table className="w-full min-w-[34rem] text-sm">
             <thead>
               <tr className="text-left text-[11px] uppercase tracking-[0.12em] text-ink-soft">
@@ -227,6 +250,7 @@ function CustomerInvoice({ customer, onChanged }: { customer: Party; onChanged: 
             </tfoot>
           </table>
         </div>
+        </>
       ) : (
         <p className="px-4 py-6 text-sm text-ink-soft sm:px-5">{t("inv.empty")}</p>
       )}

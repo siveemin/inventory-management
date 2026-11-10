@@ -155,8 +155,8 @@ export default function ProductsPage() {
                 const src = readProductImage(product.id, product.imageUrl);
                 return (
                   <tr key={product.id} className="border-t border-line">
-                    <Td>{src ? <img src={src} alt="" className="h-10 w-10 rounded-xl object-cover" /> : <span className="grid h-10 w-10 place-items-center rounded-xl bg-mist font-serif text-forest">{product.name.slice(0, 1)}</span>}</Td>
-                    <Td className="font-medium">{product.name}</Td>
+                    <Td cell="media">{src ? <img src={src} alt="" className="h-10 w-10 rounded-xl object-cover" /> : <span className="grid h-10 w-10 place-items-center rounded-xl bg-mist font-serif text-forest">{product.name.slice(0, 1)}</span>}</Td>
+                    <Td cell="title" className="font-medium">{product.name}</Td>
                     <Td>{product.sku}</Td>
                     <Td>{product.category?.name}</Td>
                     <Td className="tabular-nums">{money.amount(product.costPrice)}</Td>
