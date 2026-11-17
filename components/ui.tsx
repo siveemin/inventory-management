@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { statusTone } from "@/lib/format";
+import { useI18n } from "@/lib/settings";
 
 export function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
@@ -175,15 +176,16 @@ export function ConfirmDialog({
 }
 
 export function Pagination({ page, pageSize, total, onPage }: { page: number; pageSize: number; total: number; onPage: (page: number) => void }) {
+  const { t } = useI18n();
   const pages = Math.max(1, Math.ceil(total / pageSize));
   if (pages <= 1) return null;
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm text-ink-soft">
-      <span className="tabular-nums">{total} records</span>
+      <span className="tabular-nums">{total} {t("page.records")}</span>
       <div className="flex items-center gap-1">
-        <Button variant="subtle" className="px-3 py-1.5" disabled={page <= 1} onClick={() => onPage(page - 1)}>Prev</Button>
+        <Button variant="subtle" className="px-3 py-1.5" disabled={page <= 1} onClick={() => onPage(page - 1)}>{t("page.prev")}</Button>
         <span className="px-2 tabular-nums">{page} / {pages}</span>
-        <Button variant="subtle" className="px-3 py-1.5" disabled={page >= pages} onClick={() => onPage(page + 1)}>Next</Button>
+        <Button variant="subtle" className="px-3 py-1.5" disabled={page >= pages} onClick={() => onPage(page + 1)}>{t("page.next")}</Button>
       </div>
     </div>
   );

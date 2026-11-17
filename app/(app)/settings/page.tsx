@@ -46,7 +46,7 @@ function SettingsForm() {
             <TextInput type="number" min="1" value={rate} onChange={(event) => setRate(event.target.value)} />
           </Field>
           <div className="rounded-2xl bg-[#fbf8f2] p-4">
-            <p className="text-sm text-ink-soft">Sample amount</p>
+            <p className="text-sm text-ink-soft">{t("settings.sample")}</p>
             <p className="font-serif text-3xl">{formatUsd(sample)}</p>
             <p>{formatKhr(sample * numericRate)}</p>
           </div>

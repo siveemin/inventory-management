@@ -76,7 +76,7 @@ export default function InventoryPage() {
                   <Td>{row.bin}</Td>
                   <Td>{money.dateTime(row.updatedAt)}</Td>
                   <Td>
-                    <Button variant="subtle" className="px-3 py-1.5" onClick={(event) => { event.stopPropagation(); setAdjust(row); setType("STOCK_IN"); setQuantity("1"); setNotes(""); }}>Adjust</Button>
+                    <Button variant="subtle" className="px-3 py-1.5" onClick={(event) => { event.stopPropagation(); setAdjust(row); setType("STOCK_IN"); setQuantity("1"); setNotes(""); }}>{t("stock.adjust")}</Button>
                   </Td>
                 </tr>
               ))}
@@ -110,7 +110,7 @@ export default function InventoryPage() {
         </div>
       ) : null}
 
-      <Modal open={Boolean(adjust)} title="Adjust stock" onClose={() => setAdjust(null)}>
+      <Modal open={Boolean(adjust)} title={t("stock.adjustTitle")} onClose={() => setAdjust(null)}>
         <form onSubmit={saveAdjust} className="grid gap-4">
           <p className="text-sm text-ink-soft">{adjust?.product?.name} · {adjust?.warehouse?.name}</p>
           <Field label={t("label.type")}>
@@ -120,7 +120,7 @@ export default function InventoryPage() {
               <option value="ADJUSTMENT">{t("status.ADJUSTMENT")}</option>
             </Select>
           </Field>
-          <Field label={type === "ADJUSTMENT" ? "Counted quantity" : t("label.quantity")}>
+          <Field label={type === "ADJUSTMENT" ? t("stock.counted") : t("label.quantity")}>
             <TextInput type="number" min="0" step="1" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
           </Field>
           <Field label={t("label.notes")}><TextArea value={notes} onChange={(event) => setNotes(event.target.value)} /></Field>

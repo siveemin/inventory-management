@@ -77,7 +77,7 @@ export default function CategoriesPage() {
       <Modal open={open} title={editing ? t("action.edit") : t("action.add")} onClose={() => setOpen(false)}>
         <form onSubmit={save} className="grid gap-4">
           <Field label={t("label.name")}><TextInput value={name} onChange={(event) => setName(event.target.value)} required /></Field>
-          <Field label={t("label.slug")} hint="Generated from the name"><TextInput value={name.toLowerCase().trim().replace(/\s+/g, "-")} readOnly /></Field>
+          <Field label={t("label.slug")} hint={t("category.slugHint")}><TextInput value={name.toLowerCase().trim().replace(/\s+/g, "-")} readOnly /></Field>
           <Field label={t("label.description")}><TextArea value={description} onChange={(event) => setDescription(event.target.value)} /></Field>
           <div className="flex justify-end gap-2">
             <Button variant="subtle" onClick={() => setOpen(false)}>{t("action.cancel")}</Button>

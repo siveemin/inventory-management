@@ -126,7 +126,7 @@ export default function UsersPage() {
               {meta.data?.warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>)}
             </Select>
           </Field>
-          <Field label="Avatar URL"><TextInput value={form.avatarUrl} onChange={(event) => setForm({ ...form, avatarUrl: event.target.value })} /></Field>
+          <Field label={t("label.avatarUrl")}><TextInput value={form.avatarUrl} onChange={(event) => setForm({ ...form, avatarUrl: event.target.value })} /></Field>
           <Field label={t("label.status")}>
             <Select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}>
               <option value="ACTIVE">{t("status.ACTIVE")}</option>

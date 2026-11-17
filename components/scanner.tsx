@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from "@/lib/settings";
 import { Button } from "./ui";
 
 export function HardwareScanListener({ onScan, disabled }: { onScan: (code: string) => void; disabled?: boolean }) {
@@ -39,6 +40,7 @@ export function HardwareScanListener({ onScan, disabled }: { onScan: (code: stri
 }
 
 export function BarcodeCameraScanner({ onScan }: { onScan: (code: string) => void }) {
+  const { t } = useI18n();
   const videoRef = useRef<HTMLVideoElement>(null);
   const onScanRef = useRef(onScan);
   useEffect(() => {
@@ -139,7 +141,7 @@ export function BarcodeCameraScanner({ onScan }: { onScan: (code: string) => voi
             if (file) onFile(file);
           }}
         />
-        <span className="cursor-pointer underline">Upload a photo of a barcode</span>
+        <span className="cursor-pointer underline">{t("scan.upload")}</span>
       </label>
     </div>
   );
