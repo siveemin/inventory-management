@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { createProduct } from "@/lib/domain";
+import { createProduct, HIDDEN_PRODUCT } from "@/lib/domain";
 import { authed, ok, readJson, readPage, textSearch } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 
@@ -22,6 +22,8 @@ export async function GET(req: Request) {
     if (categoryId) and.push({ categoryId });
     if (supplierId) and.push({ supplierId });
     if (status) and.push({ status });
+    // Deleted products that old orders still use stay out of the list.
+    else and.push({ status: { not: HIDDEN_PRODUCT } });
     const where = and.length ? { AND: and } : {};
     const [total, rows] = await Promise.all([
       prisma.product.count({ where }),

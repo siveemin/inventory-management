@@ -46,7 +46,7 @@ export default function PurchaseOrdersPage() {
             <tbody>
               {list.data.data.map((order) => (
                 <tr key={order.id} className="border-t border-line">
-                  <Td><Link className="font-medium text-forest" href={`/purchase-orders/${order.id}`}>{order.orderNumber}</Link></Td>
+                  <Td><Link className="whitespace-nowrap font-medium text-forest" href={`/purchase-orders/${order.id}`}>{order.orderNumber}</Link></Td>
                   <Td>{order.supplier?.name}</Td>
                   <Td>{order.warehouse?.name}</Td>
                   <Td>{money.date(order.orderDate)}</Td>

@@ -43,7 +43,7 @@ export default function SalesOrdersPage() {
               {list.data.data.map((order) => (
                 <tr key={order.id} className="border-t border-line">
                   <Td>
-                    <Link className="font-medium text-forest" href={`/sales-orders/${order.id}`}>{order.orderNumber}</Link>
+                    <Link className="whitespace-nowrap font-medium text-forest" href={`/sales-orders/${order.id}`}>{order.orderNumber}</Link>
                     {order.kind === "CONSIGN" ? <div className="text-xs text-ink-soft">{t("kind.CONSIGN")}</div> : null}
                   </Td>
                   <Td>{order.customer?.name || t("label.walkIn")}</Td>

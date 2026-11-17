@@ -44,6 +44,7 @@ export async function dashboardData() {
   // One parallel round instead of five sequential trips to the database.
   const [products, low, openPurchases, openSales, sales, activity] = await Promise.all([
     prisma.product.findMany({
+      where: { status: { not: "ARCHIVED" } },
       select: {
         costPrice: true,
         category: { select: { name: true } },
@@ -159,7 +160,7 @@ export async function reportData(url: URL) {
   const tab = url.searchParams.get("tab") || "sales";
   const { from, to } = readRange(url);
   if (tab === "inventory") {
-    const products = await prisma.product.findMany({ include: { category: true, inventory: true } });
+    const products = await prisma.product.findMany({ where: { status: { not: "ARCHIVED" } }, include: { category: true, inventory: true } });
     const low = await lowStockRows();
     const categories = new Map<string, number>();
     let value = 0;

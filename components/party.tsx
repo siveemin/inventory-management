@@ -70,7 +70,7 @@ export function PartyPage({ kind }: { kind: "customers" | "suppliers" }) {
               {list.data.data.map((row) => (
                 <tr key={row.id} className="border-t border-line">
                   <Td><Link className="font-medium text-forest" href={`/${kind}/${row.id}`}>{row.name}</Link></Td>
-                  <Td>{row.email}</Td>
+                  <Td className="[overflow-wrap:anywhere]">{row.email}</Td>
                   <Td>{row.phone}</Td>
                   <Td>{row.city}</Td>
                   {kind === "customers" ? (

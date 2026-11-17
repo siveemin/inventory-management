@@ -41,7 +41,7 @@ export default function TransfersPage() {
             <tbody>
               {list.data.data.map((transfer) => (
                 <tr key={transfer.id} className="border-t border-line">
-                  <Td><Link className="font-medium text-forest" href={`/stock-transfers/${transfer.id}`}>{transfer.transferNumber}</Link></Td>
+                  <Td><Link className="whitespace-nowrap font-medium text-forest" href={`/stock-transfers/${transfer.id}`}>{transfer.transferNumber}</Link></Td>
                   <Td>{transfer.sourceWarehouse?.name}</Td>
                   <Td>{transfer.destWarehouse?.name}</Td>
                   <Td><StatusBadge status={transfer.status} label={t(`status.${transfer.status}`)} /></Td>

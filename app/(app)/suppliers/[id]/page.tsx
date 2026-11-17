@@ -28,9 +28,9 @@ export default function SupplierDetailPage() {
                 <tbody>
                   {data.purchaseOrders.map((order) => (
                     <tr key={order.id} className="border-t border-line">
-                      <Td><Link className="text-forest" href={`/purchase-orders/${order.id}`}>{order.orderNumber}</Link></Td>
+                      <Td><Link className="whitespace-nowrap text-forest" href={`/purchase-orders/${order.id}`}>{order.orderNumber}</Link></Td>
                       <Td><StatusBadge status={order.status} label={t(`status.${order.status}`)} /></Td>
-                      <Td>{money.amount(order.total)}</Td>
+                      <Td className="tabular-nums">{money.amount(order.total)}</Td>
                     </tr>
                   ))}
                 </tbody>
@@ -45,7 +45,7 @@ export default function SupplierDetailPage() {
                     <tr key={product.id} className="border-t border-line">
                       <Td>{product.name}</Td>
                       <Td>{product.sku}</Td>
-                      <Td>{money.amount(product.costPrice)}</Td>
+                      <Td className="tabular-nums">{money.amount(product.costPrice)}</Td>
                     </tr>
                   ))}
                 </tbody>

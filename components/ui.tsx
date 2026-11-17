@@ -102,7 +102,7 @@ export function StatusBadge({ status, label }: { status: string; label?: string 
     blue: "bg-[#e5f0f6] text-[#1d5678]",
   };
   return (
-    <span className={cx("inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em]", tones[tone])}>
+    <span className={cx("inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em]", tones[tone])}>
       {label || status}
     </span>
   );
@@ -253,7 +253,7 @@ export function Switch({ checked, onChange, label }: { checked: boolean; onChang
 }
 
 /**
- * On phones each row turns into a small card: the header text becomes a label
+ * On phones and small tablets (under 768px) each row turns into a small card: the header text becomes a label
  * above each value (copied into data-label), so no column is hidden off-screen.
  */
 export function Table({ children }: { children: React.ReactNode }) {
@@ -278,7 +278,7 @@ export function Table({ children }: { children: React.ReactNode }) {
   }, []);
   return (
     <div className="rtable max-w-full overflow-x-auto overscroll-x-contain">
-      <table ref={ref} className="w-full min-w-0 border-collapse text-sm sm:min-w-[40rem]">{children}</table>
+      <table ref={ref} className="w-full min-w-0 border-collapse text-sm md:min-w-[40rem]">{children}</table>
     </div>
   );
 }

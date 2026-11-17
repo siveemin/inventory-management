@@ -98,9 +98,9 @@ button, input, select, textarea { font: inherit; }
   .invoice-print-root tr { break-inside: avoid; }
 }
 
-/* Phones: each table row becomes a card. Labels come from the column headers
+/* Phones and small tablets: each table row becomes a card. Labels come from the column headers
    (copied to data-label by the Table component), so nothing hides off-screen. */
-@media (max-width: 639px) {
+@media (max-width: 767px) {
   .rtable thead { display: none; }
   .rtable tbody, .rtable tfoot { display: block; }
   .rtable tbody tr, .rtable tfoot tr {
@@ -136,4 +136,18 @@ button, input, select, textarea { font: inherit; }
   .rtable td:has(button), .rtable td:has(input), .rtable td:has(select) { grid-column: 1 / -1; }
   .rtable td:has(button) > div { flex-wrap: wrap; }
   .rtable td[colspan] { grid-column: 1 / -1; }
+}
+
+/* Tablets and up: amounts and dates stay on one line (e.g. "120,800 ៛" must not
+   drop its currency sign to the next line). The table scrolls sideways if needed. */
+@media (min-width: 768px) {
+  .rtable td.tabular-nums, .rtable td .tabular-nums { white-space: nowrap; }
+}
+
+/* Tablets (and laptops with the sidebar open): tighter column spacing, so tables
+   fit their card instead of pushing the last columns out of sight. */
+@media (min-width: 768px) and (max-width: 1279px) {
+  .rtable th, .rtable td { padding-left: 0.5rem; padding-right: 0.5rem; }
+  .rtable th:first-child, .rtable td:first-child { padding-left: 1rem; }
+  .rtable th:last-child, .rtable td:last-child { padding-right: 1rem; }
 }

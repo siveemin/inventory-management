@@ -90,8 +90,29 @@ function productData(input: Record<string, unknown>, partial = false) {
   };
 }
 
+/** A deleted product that old orders still use: hidden everywhere else. */
+export const HIDDEN_PRODUCT = "ARCHIVED";
+
+/** A hidden product must not block its SKU or barcode from being used again. */
+async function releaseHiddenCodes(sku: string, barcode: string | null) {
+  const taken = await prisma.product.findMany({
+    where: { status: HIDDEN_PRODUCT, OR: [{ sku }, ...(barcode ? [{ barcode }] : [])] },
+    select: { id: true, sku: true, barcode: true },
+  });
+  for (const old of taken) {
+    await prisma.product.update({
+      where: { id: old.id },
+      data: {
+        sku: old.sku === sku ? `${old.sku}-OLD-${old.id.slice(-4)}` : old.sku,
+        barcode: barcode && old.barcode === barcode ? null : old.barcode,
+      },
+    });
+  }
+}
+
 export async function createProduct(input: Record<string, unknown>, userId: string) {
   const data = productData(input);
+  await releaseHiddenCodes(data.sku, data.barcode);
   const product = await prisma.product.create({ data, include: { category: true, supplier: true, inventory: true } });
   await prisma.auditLog.create({
     data: { userId, action: "CREATE", resourceType: "PRODUCT", resourceId: product.id, description: `Created ${product.sku}` },
@@ -101,6 +122,7 @@ export async function createProduct(input: Record<string, unknown>, userId: stri
 
 export async function updateProduct(id: string, input: Record<string, unknown>, userId: string) {
   const data = productData(input);
+  await releaseHiddenCodes(data.sku, data.barcode);
   const product = await prisma.product.update({
     where: { id },
     data,
@@ -121,7 +143,14 @@ export async function deleteProduct(id: string, userId: string) {
     prisma.stockTransferItem.count({ where: { productId: id } }),
   ]);
   if (sales + purchases + transfers > 0) {
-    throw new HttpError(400, "This product is on documents. Set it to inactive instead.");
+    // Orders and invoices still point at this product, so it cannot be removed.
+    // Hide it instead: it leaves every list, search and order form, and old
+    // documents keep showing it with the same totals.
+    await prisma.product.update({ where: { id }, data: { status: HIDDEN_PRODUCT } });
+    await prisma.auditLog.create({
+      data: { userId, action: "DELETE", resourceType: "PRODUCT", resourceId: id, description: `Deleted ${product.sku} (kept on old documents)` },
+    });
+    return { ok: true, hidden: true };
   }
   await prisma.product.delete({ where: { id } });
   await prisma.auditLog.create({
