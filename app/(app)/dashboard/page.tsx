@@ -50,7 +50,7 @@ export default function DashboardPage() {
             <Card>
               <h2 className="px-4 pt-4 font-serif text-xl sm:px-5 sm:pt-5 sm:text-2xl">{t("dash.activity")}</h2>
               {/* Phones: stacked rows instead of a wide table that scrolls sideways. */}
-              <ul className="grid gap-0 px-4 pb-2 pt-2 sm:hidden">
+              <ul className="px-4 pb-2 pt-2 sm:hidden">
                 {data.activity.map((row) => (
                   <li key={row.id} className="flex items-start justify-between gap-3 border-b border-line py-3 last:border-0">
                     <div className="min-w-0">

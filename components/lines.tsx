@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { sellingUnit } from "@/lib/format";
 import { useI18n } from "@/lib/settings";
@@ -43,11 +44,15 @@ export function LineEditor({
             value={line.productId}
             onSelect={(product) => update(line.key, { productId: product.id, price: String(priceOf ? priceOf(product) : sellingUnit(product.sellingPrice, product.discountPct)) })}
           />
-          <input className={inputClass} type="number" min="1" step="1" value={line.quantity} onChange={(event) => update(line.key, { quantity: event.target.value })} />
+          <input className={showPrice ? inputClass : `${inputClass} col-span-2 @xl:col-span-1`} type="number" inputMode="numeric" min="1" step="1" value={line.quantity} onChange={(event) => update(line.key, { quantity: event.target.value })} />
           {showPrice ? (
             <MoneyInput value={line.price} aria-label={priceLabel} onChange={(usd) => update(line.key, { price: usd })} />
-          ) : <span />}
-          <Button variant="ghost" onClick={() => onChange(lines.filter((item) => item.key !== line.key))}>{t("lines.remove")}</Button>
+          ) : <span className="hidden @xl:block" />}
+          {/* Narrow rows keep the number boxes wide: the remove button shrinks to an icon. */}
+          <Button variant="ghost" className="px-2.5 @xl:px-4" aria-label={t("lines.remove")} onClick={() => onChange(lines.filter((item) => item.key !== line.key))}>
+            <X size={16} className="@xl:hidden" aria-hidden />
+            <span className="hidden @xl:inline">{t("lines.remove")}</span>
+          </Button>
         </div>
       ))}
       <Button variant="outline" onClick={() => onChange([...lines, blankLine()])}>{t("lines.add")}</Button>

@@ -198,7 +198,7 @@ function TopSearch() {
   }
 
   return (
-    <form onSubmit={onSubmit} role="search" className="relative w-full max-w-xl">
+    <form onSubmit={onSubmit} role="search" className="relative w-full min-w-0 max-w-xl">
       <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft" />
       <input
         type="search"
@@ -219,7 +219,7 @@ function LanguageSwitch() {
     { value: "km", label: "ខ្មែរ" },
   ] as const;
   return (
-    <div className="flex rounded-full border border-line bg-white p-1" role="group" aria-label="Language">
+    <div className="flex shrink-0 rounded-full border border-line bg-white p-1" role="group" aria-label="Language">
       {options.map((option) => (
         <button
           key={option.value}
@@ -227,7 +227,7 @@ function LanguageSwitch() {
           onClick={() => updatePrefs({ ...prefs, language: option.value })}
           aria-pressed={prefs.language === option.value}
           className={cx(
-            "rounded-full px-3 py-1 text-xs font-semibold",
+            "rounded-full px-2.5 py-1 text-xs font-semibold sm:px-3",
             prefs.language === option.value ? "bg-forest text-white" : "text-ink-soft hover:text-ink",
           )}
         >
@@ -243,13 +243,13 @@ function UserBadge() {
   const { t } = useI18n();
   if (!user) return null;
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex shrink-0 items-center gap-3">
       {user.avatarUrl ? (
         <img src={user.avatarUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
       ) : (
         <span className="grid h-10 w-10 place-items-center rounded-full bg-forest font-serif text-lg text-white">{user.name.slice(0, 1)}</span>
       )}
-      <div className="min-w-0 leading-tight">
+      <div className="min-w-0 max-w-40 leading-tight">
         <p className="truncate text-sm font-semibold text-ink">{user.name}</p>
         <p className="truncate text-xs text-ink-soft">{t(`role.${user.role}`)}</p>
       </div>
@@ -316,12 +316,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="min-w-0 flex-1">
             <p className="truncate font-serif text-lg">{title ? t(title.label) : system.name}</p>
           </div>
+          <LanguageSwitch />
           <BellButton />
         </header>
 
         <div className="sticky top-0 z-20 hidden items-center gap-6 border-b border-line/80 bg-paper/85 px-6 py-3 backdrop-blur lg:flex xl:px-10">
           <TopSearch />
-          <div className="ml-auto flex items-center gap-4">
+          <div className="ml-auto flex shrink-0 items-center gap-4">
             <BellButton />
             <UserBadge />
             <LanguageSwitch />
