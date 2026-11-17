@@ -33,9 +33,11 @@ export function LineEditor({
     onChange(lines.map((line) => (line.key === key ? { ...line, ...patch } : line)));
   }
   return (
-    <div className="grid gap-3">
+    // Sized by the space this editor actually has (a container query), not by the
+    // screen: beside a sidebar or in a narrow column the product box takes its own row.
+    <div className="@container grid min-w-0 gap-3">
       {lines.map((line) => (
-        <div key={line.key} className="grid gap-2 rounded-2xl border border-line bg-[#fbf8f2] p-3 md:grid-cols-[1.4fr_120px_140px_auto]">
+        <div key={line.key} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_auto] gap-2 rounded-2xl border border-line bg-[#fbf8f2] p-3 @xl:grid-cols-[minmax(0,1.4fr)_120px_140px_auto]">
           <ProductPick
             products={products}
             value={line.productId}
@@ -65,7 +67,7 @@ function ProductPick({ products, value, onSelect }: { products: MetaProduct[]; v
     return list.filter((product) => `${product.name} ${product.sku} ${product.barcode || ""}`.toLowerCase().includes(needle)).slice(0, 8);
   }, [products, query]);
   return (
-    <div className="relative">
+    <div className="relative col-span-3 min-w-0 @xl:col-span-1">
       <input
         className={inputClass}
         placeholder={t("lines.search")}

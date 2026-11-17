@@ -19,7 +19,7 @@ export function StockBars({ data }: { data: { name: string; quantity: number }[]
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data}>
           <CartesianGrid stroke="#E4DCD0" vertical={false} />
-          <XAxis dataKey="name" tick={{ fill: "#6F675E", fontSize: 11 }} interval="preserveStartEnd" angle={-18} height={60} textAnchor="end" />
+          <XAxis dataKey="name" tick={{ fill: "#6F675E", fontSize: 11 }} interval={0} angle={-35} height={70} textAnchor="end" />
           <YAxis tick={{ fill: "#6F675E", fontSize: 11 }} width={40} />
           <Tooltip contentStyle={tipStyle} />
           <Bar dataKey="quantity" fill="#1F7A4D" radius={[8, 8, 0, 0]} />
